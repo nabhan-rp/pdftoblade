@@ -16,8 +16,7 @@ export interface LetterSettings {
 
   // Header (Kop Surat)
   showKop: boolean;
-  institutionName: string;
-  institutionAddress: string;
+  headerContent: string; // Changed from separate name/address to full HTML
   headerLineHeight: number;
   headerLineDouble: boolean;
   logoUrl: string;
@@ -31,7 +30,7 @@ export interface LetterSettings {
 
   // Signature
   showSignature: boolean;
-  signatureType: 'wet' | 'qr'; // New field
+  signatureType: 'wet' | 'qr';
   signatureName: string;
   signatureTitle: string;
 }
@@ -44,8 +43,8 @@ export interface Variable {
 }
 
 export interface AnalysisResponse {
-  institutionName: string;
-  institutionAddress: string;
+  institutionName: string; // Kept for legacy mapping from AI
+  institutionAddress: string; // Kept for legacy mapping from AI
   htmlContent: string;
   detectedVariables: { key: string; label: string; defaultValue: string }[];
   signatureName?: string;

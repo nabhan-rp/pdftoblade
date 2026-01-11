@@ -12,14 +12,24 @@ const DEFAULT_SETTINGS: LetterSettings = {
   fontFamily: '"Times New Roman", serif',
   fontSize: 12,
   showKop: true,
-  institutionName: "UNIVERSITAS ISLAM NEGERI\nSUNAN GUNUNG DJATI BANDUNG",
-  institutionAddress: "Jl. A.H. Nasution No. 105, Cibiru, Bandung 40614\nTelp. (022) 7800525 Fax. (022) 7803936 Website: www.uinsgd.ac.id",
+  // HTML Structure for default header to allow rich text editing
+  headerContent: `
+    <div style="text-align: center;">
+      <p style="margin: 0;"><span style="font-size: 16pt;"><strong>UNIVERSITAS ISLAM NEGERI</strong></span></p>
+      <p style="margin: 0;"><span style="font-size: 14pt;"><strong>SUNAN GUNUNG DJATI BANDUNG</strong></span></p>
+      <p style="margin: 0; font-size: 10pt;">Jl. A.H. Nasution No. 105, Cibiru, Bandung 40614</p>
+      <p style="margin: 0; font-size: 10pt;">Telp. (022) 7800525 Fax. (022) 7803936 Website: www.uinsgd.ac.id</p>
+    </div>
+  `,
   headerLineHeight: 3,
   headerLineDouble: true,
   logoUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_UIN_Sunan_Gunung_Djati_Bandung.png", // Placeholder
   logoAspectRatio: "1:1",
-  rawHtmlContent: "<p>Loading content...</p>",
-  variables: [],
+  rawHtmlContent: "<p>Kepada Yth.<br><strong>{{ $nama_penerima }}</strong><br>di Tempat</p><p>Assalamu'alaikum Wr. Wb.</p><p>Dengan hormat, sehubungan dengan...</p>",
+  variables: [
+    { id: 'v1', key: 'nama_penerima', label: 'Nama Penerima', defaultValue: 'Bapak/Ibu Dosen' },
+    { id: 'v2', key: 'tanggal', label: 'Tanggal Surat', defaultValue: '12 Januari 2026' }
+  ],
   showSignature: true,
   signatureType: 'wet',
   signatureName: "Prof. Dr. H. Rosihon Anwar, M.Ag",
@@ -38,18 +48,21 @@ const App: React.FC = () => {
   const [view, setView] = useState<TabView>(TabView.UPLOAD);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleManualCreate = () => {
+    setSettings(DEFAULT_SETTINGS);
+    setView(TabView.EDITOR);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check for Word documents specifically to give a helpful error
     if (file.name.endsWith('.docx') || file.name.endsWith('.doc') || 
         file.type.includes('wordprocessingml') || file.type.includes('msword')) {
         alert("For Word (.docx) or Google Docs, please 'File > Save as PDF' first. The AI needs the PDF layout to accurately detect margins, logos, and headers.");
         return;
     }
 
-    // Validate MIME types: Allow Images and PDF
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
 
@@ -62,27 +75,31 @@ const App: React.FC = () => {
     reader.onload = async (e) => {
       const base64Result = e.target?.result as string;
       
-      // For PDF, we can't display a preview easily in the background without pdf.js, 
-      // so we just show a generic icon or the first page if we implemented rendering.
-      // For now, we store it but only use it for analysis.
       setDocState(prev => ({ 
         ...prev, 
-        originalImage: isImage ? base64Result : null, // Only set image preview if it's an image
+        originalImage: isImage ? base64Result : null,
         isAnalyzing: true, 
         analysisError: null 
       }));
       
       try {
-        // Strip prefix for API (data:image/jpeg;base64, or data:application/pdf;base64,)
         const base64Data = base64Result.split(',')[1];
-        
-        // Pass the actual mime type to Gemini
         const analysis = await analyzeDocumentImage(base64Data, file.type);
         
+        // Construct header HTML from analysis result if it was split
+        let detectedHeader = '';
+        if (analysis.institutionName || analysis.institutionAddress) {
+            detectedHeader = `
+                <div style="text-align: center;">
+                    <p style="margin: 0;"><span style="font-size: 14pt;"><strong>${analysis.institutionName.replace(/\n/g, '<br>')}</strong></span></p>
+                    <p style="margin: 0; font-size: 10pt;">${analysis.institutionAddress.replace(/\n/g, '<br>')}</p>
+                </div>
+            `;
+        }
+
         setSettings(prev => ({
           ...prev,
-          institutionName: analysis.institutionName || prev.institutionName,
-          institutionAddress: analysis.institutionAddress || prev.institutionAddress,
+          headerContent: detectedHeader || prev.headerContent,
           rawHtmlContent: analysis.htmlContent,
           variables: analysis.detectedVariables.map((v, i) => ({ ...v, id: `var-${i}` })),
           signatureName: analysis.signatureName || prev.signatureName,
@@ -92,7 +109,7 @@ const App: React.FC = () => {
         setView(TabView.EDITOR);
       } catch (err) {
         console.error(err);
-        setDocState(prev => ({ ...prev, analysisError: "Failed to analyze document. If using a large PDF, try a single page screenshot." }));
+        setDocState(prev => ({ ...prev, analysisError: "Failed to analyze document. If you don't have an API key, try 'Create Manually'." }));
       } finally {
         setDocState(prev => ({ ...prev, isAnalyzing: false }));
       }
@@ -102,6 +119,7 @@ const App: React.FC = () => {
 
   const handleDownloadBlade = () => {
     // Construct the full blade file
+    // Note: We use the inline CSS generated by the WYSIWYG editor for maximum compatibility
     const bladeContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -117,28 +135,36 @@ const App: React.FC = () => {
             line-height: 1.5;
             color: #000;
         }
-        .header {
-            text-align: center;
+        .header-container {
+            display: table;
+            width: 100%;
             margin-bottom: 20px;
         }
         .header-logo {
-            float: left;
+            display: table-cell;
+            vertical-align: middle;
             width: 80px;
+            padding-right: 15px;
+        }
+        .header-logo img {
+            width: 100%;
             height: auto;
         }
-        .header-text {
-            text-transform: uppercase;
-            font-weight: bold;
+        .header-content {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
         }
-        .header-address {
-            font-size: 10pt;
-            font-weight: normal;
-            text-transform: none;
+        /* WYSIWYG reset for header P tags */
+        .header-content p {
+            margin: 0;
+            padding: 0;
         }
         .header-line {
             border-bottom: ${settings.headerLineHeight}px ${settings.headerLineDouble ? 'double' : 'solid'} black;
             margin-top: 8px;
             width: 100%;
+            clear: both;
         }
         .signature {
             margin-top: 50px;
@@ -152,19 +178,21 @@ const App: React.FC = () => {
             margin: 10px auto;
         }
         .clear { clear: both; }
+        
+        /* Helper for shared hosting PDF engines that might need table layout for side-by-side header */
     </style>
 </head>
 <body>
     @if(${settings.showKop ? 'true' : 'false'})
-    <div class="header">
-        <img src="${settings.logoUrl}" class="header-logo" alt="Logo">
-        <div class="header-text">
-            <div style="font-size: 14pt;">${settings.institutionName.replace(/\n/g, '<br>')}</div>
-            <div class="header-address">${settings.institutionAddress.replace(/\n/g, '<br>')}</div>
+    <div class="header-container">
+        <div class="header-logo">
+             <img src="${settings.logoUrl}" alt="Logo">
         </div>
-        <div class="clear"></div>
-        <div class="header-line"></div>
+        <div class="header-content">
+             ${settings.headerContent}
+        </div>
     </div>
+    <div class="header-line"></div>
     @endif
 
     <div class="content">
@@ -223,19 +251,35 @@ const App: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">BladeRunner</h1>
                     <p className="text-gray-500 mb-8">Upload a PDF or Image of your document. Gemini AI will convert it into a dynamic Laravel Blade template.</p>
                     
-                    <div className="relative group">
-                        <input 
-                            type="file" 
-                            accept="image/*,.pdf,.docx,.doc" 
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            disabled={docState.isAnalyzing}
-                        />
-                        <button className={`w-full py-4 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 font-medium group-hover:bg-indigo-100 transition-colors ${docState.isAnalyzing ? 'animate-pulse cursor-wait' : ''}`}>
-                            {docState.isAnalyzing ? 'Analyzing Document with Gemini...' : 'Click to Upload PDF or Image'}
+                    <div className="flex flex-col gap-4">
+                        <div className="relative group w-full">
+                            <input 
+                                type="file" 
+                                accept="image/*,.pdf,.docx,.doc" 
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                disabled={docState.isAnalyzing}
+                            />
+                            <button className={`w-full py-4 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 font-medium group-hover:bg-indigo-100 transition-colors ${docState.isAnalyzing ? 'animate-pulse cursor-wait' : ''}`}>
+                                {docState.isAnalyzing ? 'Analyzing Document with Gemini...' : 'Click to Upload PDF or Image'}
+                            </button>
+                        </div>
+                        
+                        <div className="relative flex py-1 items-center">
+                            <div className="flex-grow border-t border-gray-200"></div>
+                            <span className="flex-shrink-0 mx-2 text-xs text-gray-400">OR</span>
+                            <div className="flex-grow border-t border-gray-200"></div>
+                        </div>
+
+                        <button 
+                            onClick={handleManualCreate}
+                            className="w-full py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            Create from Scratch (Manual)
                         </button>
                     </div>
+
                     {docState.analysisError && (
                         <p className="text-red-500 mt-4 text-sm">{docState.analysisError}</p>
                     )}
@@ -245,9 +289,6 @@ const App: React.FC = () => {
                             <li><span className="font-medium text-gray-600">PDF</span> (Recommended for best layout)</li>
                             <li><span className="font-medium text-gray-600">JPG/PNG</span> (Screenshots/Scans)</li>
                         </ul>
-                        <p className="mt-3 text-yellow-600">
-                            * For Word/Google Docs, please <b>Export as PDF</b> first.
-                        </p>
                     </div>
                  </div>
              ) : (

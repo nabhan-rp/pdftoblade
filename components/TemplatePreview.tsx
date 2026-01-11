@@ -8,16 +8,21 @@ interface TemplatePreviewProps {
 
 const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }) => {
 
-  // Replace variables in the content with their default values for preview
-  const processedContent = useMemo(() => {
-    let content = settings.rawHtmlContent;
+  const replaceVariables = (html: string) => {
+    let content = html;
     settings.variables.forEach(v => {
-      // Regex to replace {{ $key }} or {{$key}}
+      // Regex to replace {{ $key }} or {{$key}} or {{ $key}} etc.
       const regex = new RegExp(`\\{\\{\\s*\\$${v.key}\\s*\\}\\}`, 'g');
       content = content.replace(regex, `<span class="bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-300" title="$${v.key}">${v.defaultValue || v.key}</span>`);
     });
     return content;
-  }, [settings.rawHtmlContent, settings.variables]);
+  };
+
+  // Replace variables in the content with their default values for preview
+  const processedContent = useMemo(() => replaceVariables(settings.rawHtmlContent), [settings.rawHtmlContent, settings.variables]);
+  
+  // Process header content too
+  const processedHeader = useMemo(() => replaceVariables(settings.headerContent), [settings.headerContent, settings.variables]);
 
   // CSS for the lines
   const lineStyle = {
@@ -53,10 +58,11 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
                 />
               </div>
             )}
-            <div className="flex-grow text-center uppercase leading-tight text-black">
-              <h1 className="font-bold text-lg" style={{ whiteSpace: 'pre-line' }}>{settings.institutionName}</h1>
-              <p className="text-sm font-normal normal-case" style={{ whiteSpace: 'pre-line' }}>{settings.institutionAddress}</p>
-            </div>
+            {/* Header Content Area (Rich Text) */}
+            <div 
+                className="flex-grow text-center leading-tight text-black"
+                dangerouslySetInnerHTML={{ __html: processedHeader }}
+            />
           </div>
           {/* Header Line */}
           <div style={lineStyle} className="w-full mb-1"></div>
