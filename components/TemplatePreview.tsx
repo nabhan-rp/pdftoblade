@@ -36,7 +36,8 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
         paddingBottom: `${settings.marginBottom}cm`,
         paddingLeft: `${settings.marginLeft}cm`,
         fontFamily: settings.fontFamily,
-        fontSize: `${settings.fontSize}pt`
+        fontSize: `${settings.fontSize}pt`,
+        color: '#000000' // Force black text
       }}
     >
       {/* Header / Kop Surat */}
@@ -52,9 +53,9 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
                 />
               </div>
             )}
-            <div className="flex-grow text-center uppercase leading-tight">
-              <h1 className="font-bold text-lg">{settings.institutionName}</h1>
-              <p className="text-sm font-normal normal-case">{settings.institutionAddress}</p>
+            <div className="flex-grow text-center uppercase leading-tight text-black">
+              <h1 className="font-bold text-lg" style={{ whiteSpace: 'pre-line' }}>{settings.institutionName}</h1>
+              <p className="text-sm font-normal normal-case" style={{ whiteSpace: 'pre-line' }}>{settings.institutionAddress}</p>
             </div>
           </div>
           {/* Header Line */}
@@ -65,23 +66,42 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
 
       {/* Content Body */}
       <div 
-        className="content-body leading-relaxed"
+        className="content-body leading-relaxed text-black"
         dangerouslySetInnerHTML={{ __html: processedContent }}
       />
 
       {/* Signature */}
       {settings.showSignature && (
         <div className="mt-12 flex justify-end">
-          <div className="text-center min-w-[200px]">
-            <p className="mb-16">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
-            <p className="font-bold underline">{settings.signatureName}</p>
+          <div className="text-center min-w-[200px] text-black">
+            <p className="mb-2">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
+            
+            {settings.signatureType === 'wet' ? (
+                // Wet Signature: Space for signing
+                <div className="h-24"></div>
+            ) : (
+                // QR Signature: Placeholder
+                <div className="h-24 flex items-center justify-center my-2">
+                    <div className="border-2 border-dashed border-gray-400 p-2 rounded bg-gray-50 opacity-75">
+                         {/* Simple QR placeholder using a public API or just a static image for preview */}
+                         <img 
+                            src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=ESignPreview" 
+                            alt="QR Placeholder" 
+                            className="w-20 h-20 opacity-80 mix-blend-multiply"
+                         />
+                         <p className="text-[8px] text-gray-500 mt-1">E-Sign</p>
+                    </div>
+                </div>
+            )}
+
+            <p className="font-bold underline mt-2">{settings.signatureName}</p>
             <p>{settings.signatureTitle}</p>
           </div>
         </div>
       )}
       
       {/* Watermark for preview mode */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none text-6xl font-black rotate-45">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none text-6xl font-black rotate-45 select-none text-black">
         PREVIEW MODE
       </div>
     </div>

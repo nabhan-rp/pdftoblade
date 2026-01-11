@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS: LetterSettings = {
   rawHtmlContent: "<p>Loading content...</p>",
   variables: [],
   showSignature: true,
+  signatureType: 'wet',
   signatureName: "Prof. Dr. H. Rosihon Anwar, M.Ag",
   signatureTitle: "Rektor"
 };
@@ -145,6 +146,11 @@ const App: React.FC = () => {
             text-align: center;
             width: 250px;
         }
+        .signature-img {
+            width: 80px;
+            height: 80px;
+            margin: 10px auto;
+        }
         .clear { clear: both; }
     </style>
 </head>
@@ -168,7 +174,15 @@ const App: React.FC = () => {
     @if(${settings.showSignature ? 'true' : 'false'})
     <div class="signature">
         <p>Bandung, {{ $tanggal }}</p>
-        <br><br><br>
+        
+        @if(${settings.signatureType === 'wet' ? 'true' : 'false'})
+           <br><br><br>
+        @else
+           <!-- QR Code E-Sign Placeholder -->
+           <!-- Inject the QR URL in your controller: $qr_code -->
+           <img src="{{ $qr_code ?? '' }}" alt="QR Signature" class="signature-img">
+        @endif
+        
         <p style="font-weight: bold; text-decoration: underline;">${settings.signatureName}</p>
         <p>${settings.signatureTitle}</p>
     </div>

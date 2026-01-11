@@ -31,6 +31,7 @@ export interface LetterSettings {
 
   // Signature
   showSignature: boolean;
+  signatureType: 'wet' | 'qr'; // New field
   signatureName: string;
   signatureTitle: string;
 }
