@@ -238,7 +238,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm items-center">
            {/* Bullet Dropdown */}
            <div className="relative toolbar-menu-trigger">
-                <button onClick={() => { setShowBulletMenu(!showBulletMenu); setShowNumberMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5" title="Bullet List">
+                <button onClick={() => { setShowBulletMenu(!showBulletMenu); setShowNumberMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5 text-gray-900" title="Bullet List">
                     <span>•</span> <span className="text-[10px] opacity-60">▼</span>
                 </button>
                 {showBulletMenu && (
@@ -247,7 +247,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                             <button 
                                 key={style.value}
                                 onClick={() => applyListStyle('insertUnorderedList', style.value)}
-                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block"
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block text-gray-900"
                             >
                                 {style.label}
                             </button>
@@ -258,7 +258,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
            {/* Number Dropdown */}
            <div className="relative toolbar-menu-trigger">
-                <button onClick={() => { setShowNumberMenu(!showNumberMenu); setShowBulletMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5" title="Numbered List">
+                <button onClick={() => { setShowNumberMenu(!showNumberMenu); setShowBulletMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5 text-gray-900" title="Numbered List">
                     <span>1.</span> <span className="text-[10px] opacity-60">▼</span>
                 </button>
                 {showNumberMenu && (
@@ -267,7 +267,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                             <button 
                                 key={style.value}
                                 onClick={() => applyListStyle('insertOrderedList', style.value)}
-                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block"
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block text-gray-900"
                             >
                                 {style.label}
                             </button>
@@ -278,20 +278,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
            
            <div className="w-[1px] h-4 bg-gray-200 mx-0.5"></div>
            
-           <button onClick={() => execCmd('outdent')} className="p-1.5 hover:bg-gray-200" title="Outdent">←|</button>
-           <button onClick={() => execCmd('indent')} className="p-1.5 hover:bg-gray-200" title="Indent">|→</button>
+           <button onClick={() => execCmd('outdent')} className="p-1.5 hover:bg-gray-200 text-gray-900" title="Outdent">←|</button>
+           <button onClick={() => execCmd('indent')} className="p-1.5 hover:bg-gray-200 text-gray-900" title="Indent">|→</button>
         </div>
 
         {/* Table & HR */}
         <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm">
-            <button onClick={insertTable} className="p-1.5 hover:bg-gray-200 text-xs font-bold px-2" title="Insert Table">Table</button>
-            <button onClick={insertHr} className="p-1.5 hover:bg-gray-200 text-xs px-2 font-mono" title="Horizontal Line">HR</button>
+            <button onClick={insertTable} className="p-1.5 hover:bg-gray-200 text-xs font-bold px-2 text-gray-900" title="Insert Table">Table</button>
+            <button onClick={insertHr} className="p-1.5 hover:bg-gray-200 text-xs px-2 font-mono text-gray-900" title="Horizontal Line">HR</button>
         </div>
 
         <div className="w-full h-0 basis-full lg:hidden"></div> {/* Break row on small screens */}
 
         {/* Fonts */}
-        <select onChange={(e) => handleFontFamily(e.target.value)} className="text-xs border border-gray-300 rounded h-8 px-1 mr-1 bg-white" defaultValue="">
+        <select onChange={(e) => handleFontFamily(e.target.value)} className="text-xs border border-gray-300 rounded h-8 px-1 mr-1 bg-white text-gray-900" defaultValue="">
             <option value="" disabled>Font Family</option>
             {FONT_FAMILIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
@@ -304,7 +304,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 onChange={(e) => setCustomFontSize(e.target.value)}
                 onBlur={applyFontSize}
                 onKeyDown={(e) => e.key === 'Enter' && applyFontSize()}
-                className="w-10 text-xs text-center outline-none"
+                className="w-10 text-xs text-center outline-none bg-transparent text-gray-900"
                 title="Font Size (pt)"
             />
             <span className="text-xs text-gray-500">pt</span>
@@ -349,7 +349,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         ref={editorRef}
         contentEditable
         onInput={handleInput}
-        className="flex-1 p-8 outline-none prose prose-sm max-w-none focus:bg-white text-left cursor-text overflow-auto"
+        className="flex-1 p-8 outline-none prose prose-sm max-w-none focus:bg-white text-gray-900 text-left cursor-text overflow-auto"
         style={{ 
             fontFamily: defaultFontFamily,
             minHeight,

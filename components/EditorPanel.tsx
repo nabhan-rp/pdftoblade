@@ -217,7 +217,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                       <select 
                         value={settings.pageSize}
                         onChange={(e) => handlePageSizeChange(e.target.value as PageSizePreset)}
-                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white text-gray-900"
                       >
                           <option value="A4">A4</option>
                           <option value="Letter">Letter</option>
@@ -231,7 +231,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                       <select 
                         value={settings.unit}
                         onChange={(e) => handleUnitChange(e.target.value as Unit)}
-                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white text-gray-900"
                       >
                           <option value="mm">mm</option>
                           <option value="cm">cm</option>
@@ -251,7 +251,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                               updateSetting('pageWidth', parseFloat(e.target.value));
                               updateSetting('pageSize', 'Custom');
                           }}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900"
                       />
                   </div>
                   <div>
@@ -264,7 +264,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                               updateSetting('pageHeight', parseFloat(e.target.value));
                               updateSetting('pageSize', 'Custom');
                           }}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900"
                       />
                   </div>
               </div>
@@ -279,7 +279,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                     <input 
                       type="number" step="0.1" value={settings[`margin${side}` as keyof LetterSettings] as number}
                       onChange={(e) => updateSetting(`margin${side}` as keyof LetterSettings, parseFloat(e.target.value))}
-                      className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900"
                     />
                   </div>
                 ))}
@@ -340,7 +340,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                                 value={logoPrompt} 
                                 onChange={(e) => setLogoPrompt(e.target.value)}
                                 placeholder="e.g. minimalist university logo shield blue"
-                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-xs"
+                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-xs bg-white text-gray-900"
                             />
                             <button 
                                 onClick={handleGenerateLogo}
@@ -373,7 +373,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                              <div className="grid grid-cols-2 gap-2 mb-1">
                                 <div>
                                     <label className="text-[9px] text-gray-400 block">Style</label>
-                                    <select value={line.style} onChange={(e) => updateHeaderLine(line.id, 'style', e.target.value)} className="w-full text-xs border rounded p-1 bg-white">
+                                    <select value={line.style} onChange={(e) => updateHeaderLine(line.id, 'style', e.target.value)} className="w-full text-xs border rounded p-1 bg-white text-gray-900">
                                         <option value="solid">Solid</option>
                                         <option value="double">Double</option>
                                         <option value="dashed">Dashed</option>
@@ -391,15 +391,15 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                              <div className="grid grid-cols-3 gap-2">
                                 <div>
                                     <label className="text-[9px] text-gray-400 block">Thick (px)</label>
-                                    <input type="number" value={line.width} onChange={(e) => updateHeaderLine(line.id, 'width', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white" />
+                                    <input type="number" value={line.width} onChange={(e) => updateHeaderLine(line.id, 'width', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="text-[9px] text-gray-400 block">Top (px)</label>
-                                    <input type="number" value={line.marginTop} onChange={(e) => updateHeaderLine(line.id, 'marginTop', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white" />
+                                    <input type="number" value={line.marginTop} onChange={(e) => updateHeaderLine(line.id, 'marginTop', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="text-[9px] text-gray-400 block">Btm (px)</label>
-                                    <input type="number" value={line.marginBottom} onChange={(e) => updateHeaderLine(line.id, 'marginBottom', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white" />
+                                    <input type="number" value={line.marginBottom} onChange={(e) => updateHeaderLine(line.id, 'marginBottom', parseInt(e.target.value))} className="w-full text-xs border rounded p-1 bg-white text-gray-900" />
                                 </div>
                              </div>
                         </div>
@@ -420,7 +420,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                      <select 
                        value={settings.contentFontFamily} 
                        onChange={(e) => updateSetting('contentFontFamily', e.target.value)}
-                       className="text-xs border border-gray-300 rounded px-1"
+                       className="text-xs border border-gray-300 rounded px-1 bg-white text-gray-900"
                      >
                         <option value={settings.globalFontFamily}>Default Font</option>
                         <option value='"Arial", sans-serif'>Arial</option>
@@ -451,7 +451,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                             type="text" 
                             value={settings.signatureCity} 
                             onChange={(e) => updateSetting('signatureCity', e.target.value)}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900"
                             placeholder="e.g. Bandung"
                         />
                      </div>
@@ -548,7 +548,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                             <select 
                                 value={settings.attachmentFontFamily} 
                                 onChange={(e) => updateSetting('attachmentFontFamily', e.target.value)}
-                                className="text-xs border border-gray-300 rounded px-1 ml-auto"
+                                className="text-xs border border-gray-300 rounded px-1 ml-auto bg-white text-gray-900"
                             >
                                 <option value={settings.globalFontFamily}>Default Font</option>
                                 <option value='"Arial", sans-serif'>Arial</option>
