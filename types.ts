@@ -22,8 +22,16 @@ export interface HeaderLine {
   marginBottom: number;
 }
 
+export type PageSizePreset = 'A4' | 'Letter' | 'Legal' | 'F4' | 'Custom';
+export type Unit = 'mm' | 'cm' | 'in';
+
 export interface LetterSettings {
   // Page Setup
+  pageSize: PageSizePreset;
+  unit: Unit;
+  pageWidth: number;
+  pageHeight: number;
+  
   marginTop: number;
   marginRight: number;
   marginBottom: number;
@@ -39,7 +47,7 @@ export interface LetterSettings {
   // Header (Kop Surat)
   showKop: boolean;
   headerContent: string;
-  headerLines: HeaderLine[]; // NEW: Dynamic lines
+  headerLines: HeaderLine[];
   logoUrl: string;
   logoAspectRatio: string;
 

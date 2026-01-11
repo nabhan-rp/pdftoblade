@@ -22,11 +22,13 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
   const processedAttachment = useMemo(() => replaceVariables(settings.attachmentContent), [settings.attachmentContent, settings.variables]);
   const processedFooter = useMemo(() => replaceVariables(settings.footerContent), [settings.footerContent, settings.variables]);
 
-  const pagePadding = {
-    paddingTop: `${settings.marginTop}cm`,
-    paddingRight: `${settings.marginRight}cm`,
-    paddingBottom: `${settings.marginBottom}cm`,
-    paddingLeft: `${settings.marginLeft}cm`,
+  const pageStyle = {
+      width: `${settings.pageWidth}${settings.unit}`,
+      minHeight: `${settings.pageHeight}${settings.unit}`,
+      paddingTop: `${settings.marginTop}${settings.unit}`,
+      paddingRight: `${settings.marginRight}${settings.unit}`,
+      paddingBottom: `${settings.marginBottom}${settings.unit}`,
+      paddingLeft: `${settings.marginLeft}${settings.unit}`,
   };
 
   const HeaderLines = () => (
@@ -64,14 +66,13 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
     <div className="flex flex-col gap-8">
     {/* Page 1: Letter */}
     <div 
-      className="a4-preview relative bg-white text-black box-border shadow-2xl transition-transform origin-top flex flex-col"
+      className="relative bg-white text-black box-border shadow-2xl transition-transform origin-top flex flex-col"
       style={{
         transform: `scale(${scale})`,
-        ...pagePadding,
+        ...pageStyle,
         fontFamily: settings.globalFontFamily,
         fontSize: `${settings.fontSize}pt`,
         color: '#000000',
-        minHeight: '297mm' // Ensure full A4 height for footer positioning
       }}
     >
       {settings.showKop && <HeaderComponent />}
@@ -89,7 +90,7 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
                          <p className="mb-2">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
                     )}
                     <div className="h-20 flex items-center justify-center my-2">
-                        {sig.type === 'wet' ? <div className="h-full"></div> : <div className="border border-dashed p-1 text-[8px]">QR Placeholder</div>}
+                        {sig.type === 'wet' ? <div className="h-full"></div> : <div className="border border-dashed border-gray-400 p-2 text-[10px] bg-gray-50 flex items-center justify-center w-20 h-20">QR Placeholder</div>}
                     </div>
                     <p className="font-bold underline mt-2">{sig.name}</p>
                     <p>{sig.title}</p>
@@ -109,14 +110,13 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
     {/* Page 2: Attachments */}
     {settings.hasAttachment && (
         <div 
-            className="a4-preview relative bg-white text-black box-border shadow-2xl transition-transform origin-top flex flex-col"
+            className="relative bg-white text-black box-border shadow-2xl transition-transform origin-top flex flex-col"
             style={{
                 transform: `scale(${scale})`,
-                ...pagePadding,
+                ...pageStyle,
                 fontFamily: settings.globalFontFamily,
                 fontSize: `${settings.fontSize}pt`,
                 color: '#000000',
-                minHeight: '297mm'
             }}
         >
             <div className="absolute -top-6 left-0 text-gray-500 text-xs italic font-bold">-- Page Break --</div>

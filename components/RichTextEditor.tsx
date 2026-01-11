@@ -10,15 +10,6 @@ interface RichTextEditorProps {
   minHeight?: string;
 }
 
-const FONT_SIZES = [
-  { label: '10pt', value: '10pt' },
-  { label: '11pt', value: '11pt' },
-  { label: '12pt', value: '12pt' },
-  { label: '14pt', value: '14pt' },
-  { label: '18pt', value: '18pt' },
-  { label: '24pt', value: '24pt' },
-];
-
 const FONT_FAMILIES = [
   { label: 'Times New Roman', value: '"Times New Roman", serif' },
   { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
@@ -38,6 +29,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showVarMenu, setShowVarMenu] = useState(false);
+  const [customFontSize, setCustomFontSize] = useState('12');
 
   useEffect(() => {
     if (editorRef.current) {
@@ -98,7 +90,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     handleInput();
   };
 
-  const handleFontSize = (size: string) => {
+  const applyFontSize = () => {
+    const size = customFontSize + 'pt';
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -114,6 +107,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
              range.setEnd(span, 1);
          }
       } catch (e) {
+          // Fallback if complex selection
           document.execCommand('fontSize', false, '3');
       }
       selection.removeAllRanges();
@@ -184,19 +178,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {FONT_FAMILIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
 
-        <select onChange={(e) => handleFontSize(e.target.value)} className="text-xs border border-gray-300 rounded h-8 px-1 mr-1 bg-white" defaultValue="">
-            <option value="" disabled>Size</option>
-            {FONT_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
+        {/* Custom Font Size Input */}
+        <div className="flex items-center gap-1 bg-white rounded border border-gray-300 h-8 px-1 mr-1">
+            <input 
+                type="number" 
+                value={customFontSize}
+                onChange={(e) => setCustomFontSize(e.target.value)}
+                onBlur={applyFontSize}
+                onKeyDown={(e) => e.key === 'Enter' && applyFontSize()}
+                className="w-10 text-xs text-center outline-none"
+                title="Font Size (pt)"
+            />
+            <span className="text-xs text-gray-500">pt</span>
+        </div>
 
         {/* Color Picker */}
         <div className="flex items-center mr-1" title="Text Color">
-            <label className="cursor-pointer border border-gray-300 rounded p-1 hover:bg-gray-200 flex items-center justify-center h-8 w-8 bg-white">
+            <label className="cursor-pointer border border-gray-300 rounded p-1 hover:bg-gray-200 flex items-center justify-center h-8 w-8 bg-white relative">
                 <span className="text-xs font-bold text-gray-600">A</span>
                 <input 
                     type="color" 
                     onChange={(e) => execCmd('foreColor', e.target.value)}
-                    className="absolute w-0 h-0 opacity-0" 
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
                 />
             </label>
         </div>

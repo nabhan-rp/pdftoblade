@@ -5,6 +5,12 @@ import EditorPanel from './components/EditorPanel';
 import TemplatePreview from './components/TemplatePreview';
 
 const DEFAULT_SETTINGS: LetterSettings = {
+  // A4 defaults
+  pageSize: 'A4',
+  unit: 'cm',
+  pageWidth: 21,
+  pageHeight: 29.7,
+  
   marginTop: 4, 
   marginRight: 3,
   marginBottom: 3,
@@ -186,7 +192,8 @@ const App: React.FC = () => {
     <title>{{ $title ?? 'Document' }}</title>
     <style>
         @page {
-            margin: ${settings.marginTop}cm ${settings.marginRight}cm ${settings.marginBottom}cm ${settings.marginLeft}cm;
+            size: ${settings.pageWidth}${settings.unit} ${settings.pageHeight}${settings.unit};
+            margin: ${settings.marginTop}${settings.unit} ${settings.marginRight}${settings.unit} ${settings.marginBottom}${settings.unit} ${settings.marginLeft}${settings.unit};
         }
         body {
             font-family: ${settings.globalFontFamily.replace(/"/g, "'")};

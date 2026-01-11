@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LetterSettings, Variable, Signature, HeaderLine } from '../types';
+import React, { useState, useEffect } from 'react';
+import { LetterSettings, Variable, Signature, HeaderLine, PageSizePreset, Unit } from '../types';
 import { generateLogo } from '../services/geminiService';
 import RichTextEditor from './RichTextEditor';
 
@@ -10,6 +10,14 @@ interface EditorPanelProps {
   onBack: () => void;
 }
 
+// Standard sizes in mm
+const PAGE_SIZES: Record<string, { width: number; height: number }> = {
+  'A4': { width: 210, height: 297 },
+  'Letter': { width: 215.9, height: 279.4 },
+  'Legal': { width: 215.9, height: 355.6 },
+  'F4': { width: 215, height: 330 }, // Indonesian Folio approximation
+};
+
 const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDownload, onBack }) => {
   const [logoPrompt, setLogoPrompt] = useState("");
   const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
@@ -17,6 +25,53 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
 
   const updateSetting = <K extends keyof LetterSettings>(key: K, value: LetterSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Unit conversion helper
+  const convertValue = (val: number, from: Unit, to: Unit): number => {
+      let mm = val;
+      if (from === 'cm') mm = val * 10;
+      if (from === 'in') mm = val * 25.4;
+      
+      if (to === 'mm') return parseFloat(mm.toFixed(2));
+      if (to === 'cm') return parseFloat((mm / 10).toFixed(2));
+      if (to === 'in') return parseFloat((mm / 25.4).toFixed(3));
+      return val;
+  };
+
+  const handleUnitChange = (newUnit: Unit) => {
+    const oldUnit = settings.unit;
+    if (oldUnit === newUnit) return;
+
+    setSettings(prev => ({
+        ...prev,
+        unit: newUnit,
+        pageWidth: convertValue(prev.pageWidth, oldUnit, newUnit),
+        pageHeight: convertValue(prev.pageHeight, oldUnit, newUnit),
+        marginTop: convertValue(prev.marginTop, oldUnit, newUnit),
+        marginBottom: convertValue(prev.marginBottom, oldUnit, newUnit),
+        marginLeft: convertValue(prev.marginLeft, oldUnit, newUnit),
+        marginRight: convertValue(prev.marginRight, oldUnit, newUnit),
+    }));
+  };
+
+  const handlePageSizeChange = (preset: PageSizePreset) => {
+      if (preset === 'Custom') {
+          updateSetting('pageSize', 'Custom');
+          return;
+      }
+      const sizeMm = PAGE_SIZES[preset];
+      if (sizeMm) {
+          const currentUnit = settings.unit;
+          const w = convertValue(sizeMm.width, 'mm', currentUnit);
+          const h = convertValue(sizeMm.height, 'mm', currentUnit);
+          setSettings(prev => ({
+              ...prev,
+              pageSize: preset,
+              pageWidth: w,
+              pageHeight: h
+          }));
+      }
   };
 
   const handleGenerateLogo = async () => {
@@ -119,7 +174,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
     updateSetting('signatures', settings.signatures.filter(s => s.id !== id));
   };
 
-  const updateSignature = (id: string, field: keyof Signature, value: string) => {
+  const updateSignature = (id: string, field: keyof Signature, value: any) => {
     const newSigs = settings.signatures.map(s => s.id === id ? { ...s, [field]: value } : s);
     updateSetting('signatures', newSigs);
   };
@@ -151,13 +206,75 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
         
         {/* LAYOUT SETTINGS */}
         {activeSection === 'layout' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Margins (cm)</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Page Setup</label>
+              
+              <div className="flex gap-2 mb-2">
+                  <div className="flex-1">
+                      <label className="text-[10px] text-gray-400 block mb-1">Preset Size</label>
+                      <select 
+                        value={settings.pageSize}
+                        onChange={(e) => handlePageSizeChange(e.target.value as PageSizePreset)}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                      >
+                          <option value="A4">A4</option>
+                          <option value="Letter">Letter</option>
+                          <option value="Legal">Legal</option>
+                          <option value="F4">F4 (Folio)</option>
+                          <option value="Custom">Custom</option>
+                      </select>
+                  </div>
+                  <div className="w-20">
+                      <label className="text-[10px] text-gray-400 block mb-1">Unit</label>
+                      <select 
+                        value={settings.unit}
+                        onChange={(e) => handleUnitChange(e.target.value as Unit)}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                      >
+                          <option value="mm">mm</option>
+                          <option value="cm">cm</option>
+                          <option value="in">inch</option>
+                      </select>
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                      <label className="text-[10px] text-gray-400 block mb-1">Width ({settings.unit})</label>
+                      <input 
+                          type="number"
+                          step="0.1"
+                          value={settings.pageWidth}
+                          onChange={(e) => {
+                              updateSetting('pageWidth', parseFloat(e.target.value));
+                              updateSetting('pageSize', 'Custom');
+                          }}
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                      />
+                  </div>
+                  <div>
+                      <label className="text-[10px] text-gray-400 block mb-1">Height ({settings.unit})</label>
+                      <input 
+                          type="number"
+                          step="0.1"
+                          value={settings.pageHeight}
+                          onChange={(e) => {
+                              updateSetting('pageHeight', parseFloat(e.target.value));
+                              updateSetting('pageSize', 'Custom');
+                          }}
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                      />
+                  </div>
+              </div>
+
+              <div className="border-t border-gray-100 my-4"></div>
+
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Margins ({settings.unit})</label>
               <div className="grid grid-cols-2 gap-3">
                 {['Top', 'Right', 'Bottom', 'Left'].map((side) => (
                   <div key={side}>
-                    <label className="text-xs text-gray-400 block mb-1">{side}</label>
+                    <label className="text-[10px] text-gray-400 block mb-1">{side}</label>
                     <input 
                       type="number" step="0.1" value={settings[`margin${side}` as keyof LetterSettings] as number}
                       onChange={(e) => updateSetting(`margin${side}` as keyof LetterSettings, parseFloat(e.target.value))}
@@ -328,8 +445,23 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                         <div key={sig.id} className="border border-gray-200 rounded p-2 bg-gray-50 relative group mb-2">
                             <button onClick={() => removeSignature(sig.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">x</button>
                             <p className="text-[10px] text-gray-400 mb-1 font-bold">Signature #{index + 1}</p>
+                            
+                            <div className="mb-2">
+                                <label className="text-[9px] text-gray-400 block">Type</label>
+                                <div className="flex gap-2 text-xs">
+                                    <label className="flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" checked={sig.type === 'wet'} onChange={() => updateSignature(sig.id, 'type', 'wet')} name={`sigtype-${sig.id}`} />
+                                        <span>Konvensional (Wet)</span>
+                                    </label>
+                                    <label className="flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" checked={sig.type === 'qr'} onChange={() => updateSignature(sig.id, 'type', 'qr')} name={`sigtype-${sig.id}`} />
+                                        <span>E-Sign (QR)</span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                <input value={sig.label || ''} onChange={(e) => updateSignature(sig.id, 'label', e.target.value)} placeholder="Prefix" className="text-xs border border-gray-300 rounded p-1 bg-white text-gray-900" />
+                                <input value={sig.label || ''} onChange={(e) => updateSignature(sig.id, 'label', e.target.value)} placeholder="Prefix (e.g. Mengetahui,)" className="text-xs border border-gray-300 rounded p-1 bg-white text-gray-900" />
                                 <input value={sig.name} onChange={(e) => updateSignature(sig.id, 'name', e.target.value)} placeholder="Name" className="text-xs border border-gray-300 rounded p-1 font-bold bg-white text-gray-900" />
                             </div>
                             <input value={sig.title} onChange={(e) => updateSignature(sig.id, 'title', e.target.value)} placeholder="Title" className="w-full text-xs border border-gray-300 rounded p-1 bg-white text-gray-900" />
