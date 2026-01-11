@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey });
 
 /**
  * Analyzes a document image or PDF to extract structure and convert to a template format.
- * Uses Gemini 3 Pro with Thinking Mode for complex layout reasoning.
+ * Uses Gemini 3 Flash for speed and efficiency.
  */
 export const analyzeDocumentImage = async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<AnalysisResponse> => {
   if (!apiKey) throw new Error("API Key missing");
@@ -27,7 +27,7 @@ export const analyzeDocumentImage = async (base64Data: string, mimeType: string 
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview", // Switched to Flash for speed (approx 5-10x faster)
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -35,7 +35,6 @@ export const analyzeDocumentImage = async (base64Data: string, mimeType: string 
         ]
       },
       config: {
-        thinkingConfig: { thinkingBudget: 16000 }, // Thinking mode for better layout analysis
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

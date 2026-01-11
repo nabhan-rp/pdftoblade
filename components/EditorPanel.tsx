@@ -29,6 +29,17 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
       setIsGeneratingLogo(false);
     }
   };
+  
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        updateSetting('logoUrl', ev.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const updateVariable = (id: string, field: keyof Variable, value: string) => {
     const newVars = settings.variables.map(v => v.id === id ? { ...v, [field]: value } : v);
@@ -130,6 +141,23 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Logo Settings</h3>
                     
+                    {/* Upload Local Logo */}
+                    <div className="mb-3">
+                        <label className="text-xs text-gray-400 block mb-1">Upload Logo Image</label>
+                        <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        />
+                    </div>
+
+                    <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-gray-200"></div>
+                        <span className="flex-shrink-0 mx-2 text-[10px] text-gray-400">OR GENERATE</span>
+                        <div className="flex-grow border-t border-gray-200"></div>
+                    </div>
+
                     {/* Aspect Ratio Selector */}
                     <div className="mb-3">
                         <label className="text-xs text-gray-400 block mb-1">Aspect Ratio</label>
