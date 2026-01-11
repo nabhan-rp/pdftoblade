@@ -62,32 +62,43 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const insertTable = () => {
-    const tableHtml = `
-      <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-        <thead>
-          <tr>
-            <th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">No</th>
-            <th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Item</th>
-            <th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border: 1px solid #000; padding: 5px;">1</td>
-            <td style="border: 1px solid #000; padding: 5px;">Example Item</td>
-            <td style="border: 1px solid #000; padding: 5px;">Details here</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 5px;">2</td>
-            <td style="border: 1px solid #000; padding: 5px;">...</td>
-            <td style="border: 1px solid #000; padding: 5px;">...</td>
-          </tr>
-        </tbody>
-      </table>
-      <p><br></p>
-    `;
-    document.execCommand('insertHTML', false, tableHtml);
-    handleInput();
+    const rowsInput = prompt("Jumlah Baris (Rows):", "3");
+    if (rowsInput === null) return;
+    const colsInput = prompt("Jumlah Kolom (Columns):", "3");
+    if (colsInput === null) return;
+    
+    const rows = parseInt(rowsInput) || 3;
+    const cols = parseInt(colsInput) || 3;
+
+    if (rows > 0 && cols > 0) {
+      let tableHtml = '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;"><thead><tr>';
+      
+      // Header row
+      for (let j = 0; j < cols; j++) {
+         tableHtml += `<th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Header ${j + 1}</th>`;
+      }
+      tableHtml += '</tr></thead><tbody>';
+
+      // Body rows
+      for (let i = 0; i < rows; i++) {
+        tableHtml += '<tr>';
+        for (let j = 0; j < cols; j++) {
+           tableHtml += `<td style="border: 1px solid #000; padding: 5px;">Cell</td>`;
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table><p><br></p>';
+      
+      document.execCommand('insertHTML', false, tableHtml);
+      handleInput();
+    }
+  };
+
+  const insertHr = () => {
+      // Menggunakan style eksplisit agar garis terlihat jelas
+      const hrHtml = '<hr style="border-top: 1px solid #000; margin: 15px 0; width: 100%;" /><p><br></p>';
+      document.execCommand('insertHTML', false, hrHtml);
+      handleInput();
   };
 
   const applyFontSize = () => {
@@ -167,7 +178,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         {/* Table & HR */}
         <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm">
             <button onClick={insertTable} className="p-1.5 hover:bg-gray-200 text-xs font-bold px-2" title="Insert Table">Table</button>
-            <button onClick={() => execCmd('insertHorizontalRule')} className="p-1.5 hover:bg-gray-200 text-xs px-2" title="Horizontal Line">HR</button>
+            <button onClick={insertHr} className="p-1.5 hover:bg-gray-200 text-xs px-2 font-mono" title="Horizontal Line (Garis Pembatas)">HR</button>
         </div>
 
         <div className="w-full h-0 basis-full lg:hidden"></div> {/* Break row on small screens */}
