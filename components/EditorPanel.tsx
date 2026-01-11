@@ -167,7 +167,34 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                 ))}
               </div>
             </div>
-            {/* Fonts settings omitted for brevity, same as before */}
+            
+            <div>
+               <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Typography (Defaults)</label>
+               <div className="space-y-2">
+                 <div>
+                    <label className="text-xs text-gray-400">Global Font Family</label>
+                    <select 
+                      value={settings.globalFontFamily}
+                      onChange={(e) => updateSetting('globalFontFamily', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 bg-white"
+                    >
+                      <option value='"Times New Roman", serif'>Times New Roman</option>
+                      <option value='"Arial", sans-serif'>Arial</option>
+                      <option value='"Calibri", sans-serif'>Calibri</option>
+                      <option value='"Verdana", sans-serif'>Verdana</option>
+                    </select>
+                 </div>
+                 <div>
+                    <label className="text-xs text-gray-400">Base Font Size (pt)</label>
+                    <input 
+                      type="number" 
+                      value={settings.fontSize}
+                      onChange={(e) => updateSetting('fontSize', parseInt(e.target.value))}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 bg-white"
+                    />
+                 </div>
+               </div>
+            </div>
           </div>
         )}
 
@@ -183,8 +210,29 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
               <>
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Logo Settings</h3>
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                    {/* Generator omitted for brevity */}
+                    <div className="mb-3">
+                        <label className="text-xs text-gray-400 block mb-1">Upload Logo Image</label>
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-400 block mb-1">Generate AI Logo (Description)</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={logoPrompt} 
+                                onChange={(e) => setLogoPrompt(e.target.value)}
+                                placeholder="e.g. minimalist university logo shield blue"
+                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-xs"
+                            />
+                            <button 
+                                onClick={handleGenerateLogo}
+                                disabled={isGeneratingLogo || !logoPrompt}
+                                className="bg-indigo-600 text-white text-xs px-2 py-1 rounded disabled:bg-gray-300"
+                            >
+                                {isGeneratingLogo ? '...' : 'Gen'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div>
@@ -249,8 +297,26 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
         {activeSection === 'content' && (
           <div className="space-y-4 h-full flex flex-col">
              <div className="flex-1 flex flex-col min-h-[300px]">
-                {/* Content Editor code same as before */}
-                <RichTextEditor content={settings.rawHtmlContent} onChange={(html) => updateSetting('rawHtmlContent', html)} defaultFontFamily={settings.contentFontFamily} availableVariables={settings.variables} onAddVariable={handleAddVariable} minHeight="350px" />
+                <div className="flex justify-between items-center mb-1">
+                     <label className="text-xs text-gray-400 block">Letter Body</label>
+                     <select 
+                       value={settings.contentFontFamily} 
+                       onChange={(e) => updateSetting('contentFontFamily', e.target.value)}
+                       className="text-xs border border-gray-300 rounded px-1"
+                     >
+                        <option value={settings.globalFontFamily}>Default Font</option>
+                        <option value='"Arial", sans-serif'>Arial</option>
+                        <option value='"Times New Roman", serif'>Times</option>
+                     </select>
+                </div>
+                <RichTextEditor 
+                    content={settings.rawHtmlContent}
+                    onChange={(html) => updateSetting('rawHtmlContent', html)}
+                    defaultFontFamily={settings.contentFontFamily}
+                    availableVariables={settings.variables}
+                    onAddVariable={handleAddVariable}
+                    minHeight="350px"
+                />
              </div>
 
              <div className="border-t border-gray-200 pt-4 mt-2">
@@ -263,7 +329,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                             <button onClick={() => removeSignature(sig.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">x</button>
                             <p className="text-[10px] text-gray-400 mb-1 font-bold">Signature #{index + 1}</p>
                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                {/* FIX: Forced background white and text dark to prevent dark mode issues */}
                                 <input value={sig.label || ''} onChange={(e) => updateSignature(sig.id, 'label', e.target.value)} placeholder="Prefix" className="text-xs border border-gray-300 rounded p-1 bg-white text-gray-900" />
                                 <input value={sig.name} onChange={(e) => updateSignature(sig.id, 'name', e.target.value)} placeholder="Name" className="text-xs border border-gray-300 rounded p-1 font-bold bg-white text-gray-900" />
                             </div>
@@ -274,7 +339,135 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
           </div>
         )}
 
-        {/* Other sections (Attachments, Footer) remain mostly the same structure */}
+        {/* ATTACHMENTS SETTINGS */}
+        {activeSection === 'attachments' && (
+            <div className="space-y-4 h-full flex flex-col">
+                 <div className="bg-yellow-50 p-3 rounded text-xs text-yellow-800 border border-yellow-200">
+                    <strong>Attachments:</strong> Automatically starts on a new page. You can add tables or upload images manually.
+                 </div>
+
+                 <div className="flex items-center gap-4 mb-2 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            checked={settings.hasAttachment}
+                            onChange={(e) => updateSetting('hasAttachment', e.target.checked)}
+                            className="rounded text-indigo-600"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Enable</span>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            checked={settings.attachmentShowKop}
+                            onChange={(e) => updateSetting('attachmentShowKop', e.target.checked)}
+                            disabled={!settings.hasAttachment}
+                            className="rounded text-indigo-600 disabled:opacity-50"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Repeat Kop Surat</span>
+                    </label>
+                 </div>
+
+                 {settings.hasAttachment && (
+                    <div className="flex-1 flex flex-col min-h-[400px]">
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 px-2 py-1 rounded cursor-pointer">
+                                <span>Upload Image to Attachment</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleAttachmentUpload} />
+                            </label>
+                            
+                            <select 
+                                value={settings.attachmentFontFamily} 
+                                onChange={(e) => updateSetting('attachmentFontFamily', e.target.value)}
+                                className="text-xs border border-gray-300 rounded px-1 ml-auto"
+                            >
+                                <option value={settings.globalFontFamily}>Default Font</option>
+                                <option value='"Arial", sans-serif'>Arial</option>
+                                <option value='"Courier New", monospace'>Courier</option>
+                            </select>
+                        </div>
+
+                        <RichTextEditor 
+                            content={settings.attachmentContent}
+                            onChange={(html) => updateSetting('attachmentContent', html)}
+                            defaultFontFamily={settings.attachmentFontFamily}
+                            availableVariables={settings.variables}
+                            onAddVariable={handleAddVariable}
+                            minHeight="400px"
+                            placeholder="Tables, Lists, or Images..."
+                        />
+                    </div>
+                 )}
+            </div>
+        )}
+
+        {/* FOOTER SETTINGS */}
+        {activeSection === 'footer' && (
+             <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                    <input 
+                        type="checkbox" 
+                        checked={settings.showFooter}
+                        onChange={(e) => updateSetting('showFooter', e.target.checked)}
+                        className="rounded text-indigo-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Enable Footer</span>
+                </div>
+                {settings.showFooter && (
+                    <RichTextEditor 
+                        content={settings.footerContent}
+                        onChange={(html) => updateSetting('footerContent', html)}
+                        defaultFontFamily={settings.globalFontFamily}
+                        minHeight="100px"
+                        placeholder="e.g. Slogan, Page numbers, etc."
+                    />
+                )}
+             </div>
+        )}
+
+        {/* VARIABLES SETTINGS */}
+        {activeSection === 'variables' && (
+            <div className="space-y-4">
+                <div className="bg-blue-50 p-3 rounded text-xs text-blue-800 border border-blue-200 mb-4">
+                    Variables defined here can be inserted into the editor using the <code>{`{ }`}</code> button.
+                    The default value is what shows up in the preview.
+                </div>
+                <div className="space-y-3">
+                    {settings.variables.map((variable) => (
+                        <div key={variable.id} className="border border-gray-200 rounded p-3 bg-gray-50 flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                                <span className="font-mono text-xs font-bold bg-gray-200 px-1 rounded text-gray-700">${variable.key}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="text-[10px] text-gray-400 block uppercase">Label</label>
+                                    <input 
+                                        type="text" 
+                                        value={variable.label} 
+                                        onChange={(e) => updateVariable(variable.id, 'label', e.target.value)}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white text-gray-900"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-gray-400 block uppercase">Default Value (Preview)</label>
+                                    <input 
+                                        type="text" 
+                                        value={variable.defaultValue} 
+                                        onChange={(e) => updateVariable(variable.id, 'defaultValue', e.target.value)}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white text-gray-900"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {settings.variables.length === 0 && (
+                        <p className="text-sm text-gray-500 text-center italic">No variables yet. Add them in the editor.</p>
+                    )}
+                </div>
+            </div>
+        )}
+
       </div>
     </div>
   );
