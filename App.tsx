@@ -355,7 +355,9 @@ const App: React.FC = () => {
                             <button onClick={handleManualCreate} className="w-full py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 shadow-sm">
                                 Manual Creation
                             </button>
-                            <p className="text-xs text-gray-400 mt-1 text-center">Start from scratch with a blank canvas. No AI analysis.</p>
+                            <p className="text-xs text-indigo-600 font-medium mt-2 text-center bg-indigo-50 py-2 rounded border border-indigo-100">
+                                Start from scratch with a blank canvas. No AI analysis.
+                            </p>
                         </div>
                     </div>
                  </div>
