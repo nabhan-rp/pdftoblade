@@ -72,7 +72,7 @@ const DEFAULT_SETTINGS: LetterSettings = {
   ],
   showSignature: true,
   signatures: [
-    { id: 's1', name: 'Prof. Dr. H. Rosihon Anwar, M.Ag', title: 'Rektor', type: 'wet', label: 'Mengetahui,' }
+    { id: 's1', name: 'Prof. Dr. H. Rosihon Anwar, M.Ag', title: 'Rektor', type: 'wet', label: 'Mengetahui,', align: 'right' }
   ]
 };
 
@@ -149,7 +149,8 @@ const App: React.FC = () => {
              name: analysis.signatureName,
              title: analysis.signatureTitle || 'Pejabat',
              type: 'wet',
-             label: 'Hormat Kami,'
+             label: 'Hormat Kami,',
+             align: 'right'
           }] : prev.signatures
         }));
         
@@ -164,15 +165,45 @@ const App: React.FC = () => {
   };
 
   const handleDownloadBlade = () => {
-    const signaturesHtml = settings.signatures.map((sig, idx) => `
-        <div class="sig-block">
+    const totalSigs = settings.signatures.length;
+    
+    // Determine overall container alignment for single signature
+    let containerAlignStyle = "margin-top: 50px; width: 100%;";
+    if (totalSigs === 1) {
+        const align = settings.signatures[0].align || 'right';
+        containerAlignStyle += ` text-align: ${align};`;
+    } else {
+        containerAlignStyle += " overflow: hidden;"; // Clear floats
+    }
+
+    const signaturesHtml = settings.signatures.map((sig, idx) => {
+        const isLast = idx === totalSigs - 1;
+        const isOdd = totalSigs % 2 !== 0;
+        
+        // CSS Logic for Layout:
+        // 1. Single Sig: Inline-block (handled by container text-align)
+        // 2. Multiple Sigs: Float left 50%
+        // 3. Odd Last Sig (>1): Clear both, 100% width, center.
+        
+        let blockStyle = '';
+        if (totalSigs === 1) {
+            blockStyle = 'display: inline-block; text-align: center; min-width: 200px; vertical-align: top;';
+        } else if (isOdd && isLast) {
+            blockStyle = 'width: 100%; clear: both; float: none; display: block; text-align: center; margin-top: 20px;';
+        } else {
+            blockStyle = 'width: 50%; float: left; text-align: center; margin-bottom: 20px;';
+        }
+
+        return `
+        <div class="sig-block" style="${blockStyle}">
             <p>${sig.label}</p>
-            ${idx === settings.signatures.length - 1 ? `<p>Bandung, {{ $tanggal }}</p>` : ''}
-            ${sig.type === 'wet' ? '<div style="height: 80px;"></div>' : `<div style="height: 80px; text-align:center;"><img src="{{ $qr_code_${idx} ?? '' }}" alt="QR" style="height:70px; width:70px;"></div>`}
+            ${isLast ? `<p>Bandung, {{ $tanggal }}</p>` : ''}
+            ${sig.type === 'wet' ? '<div style="height: 80px;"></div>' : `<div style="height: 80px; text-align:center;"><img src="{{ $qr_code_${idx} ?? '' }}" alt="QR" style="height:70px; width:70px; display:inline-block;"></div>`}
             <p style="font-weight: bold; text-decoration: underline;">${sig.name}</p>
             <p>${sig.title}</p>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Generate Dynamic Header Lines HTML
     const headerLinesHtml = settings.headerLines.map(line => `
@@ -213,8 +244,6 @@ const App: React.FC = () => {
         .header-lines { margin-bottom: 15px; }
 
         .content { font-family: ${settings.contentFontFamily.replace(/"/g, "'")}; }
-        .signature-container { margin-top: 50px; width: 100%; display: table; }
-        .sig-block { display: table-cell; vertical-align: top; text-align: center; padding: 0 10px; width: ${100 / Math.max(1, settings.signatures.length)}%; }
         
         .footer { 
             position: fixed; 
@@ -252,7 +281,7 @@ const App: React.FC = () => {
     <div class="content">${settings.rawHtmlContent}</div>
 
     @if(${settings.showSignature ? 'true' : 'false'})
-    <div class="signature-container">${signaturesHtml}</div>
+    <div class="signature-container" style="${containerAlignStyle}">${signaturesHtml}</div>
     @endif
 
     @if(${settings.hasAttachment ? 'true' : 'false'})

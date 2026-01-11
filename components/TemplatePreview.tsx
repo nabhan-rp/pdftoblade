@@ -82,20 +82,42 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
       {/* Signatures */}
       {settings.showSignature && settings.signatures.length > 0 && (
         <div className="mt-8 w-full">
-           <div className={`grid ${settings.signatures.length > 1 ? 'grid-cols-2' : 'grid-cols-1 justify-items-end'} gap-8`}>
-             {settings.signatures.map((sig, idx) => (
-                <div key={sig.id} className="text-center min-w-[200px] text-black" style={{ justifySelf: settings.signatures.length === 1 ? 'end' : 'center' }}>
-                    <p className="mb-1">{sig.label}</p>
-                    {idx === settings.signatures.length - 1 && (
-                         <p className="mb-2">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
-                    )}
-                    <div className="h-20 flex items-center justify-center my-2">
-                        {sig.type === 'wet' ? <div className="h-full"></div> : <div className="border border-dashed border-gray-400 p-2 text-[10px] bg-gray-50 flex items-center justify-center w-20 h-20">QR Placeholder</div>}
+           <div className="grid grid-cols-2 gap-8">
+             {settings.signatures.map((sig, idx) => {
+                const total = settings.signatures.length;
+                const isSingle = total === 1;
+                const isOdd = total % 2 !== 0;
+                const isLast = idx === total - 1;
+
+                let wrapperClass = "text-center min-w-[200px] text-black ";
+                
+                if (isSingle) {
+                    wrapperClass += "col-span-2 flex flex-col ";
+                    if (sig.align === 'left') wrapperClass += "items-start text-left";
+                    else if (sig.align === 'center') wrapperClass += "items-center text-center";
+                    else wrapperClass += "items-end text-center"; // Default right
+                } else if (isOdd && isLast) {
+                    // Last item in an odd list (except single) is centered and spans full width
+                    wrapperClass += "col-span-2 justify-self-center";
+                } else {
+                    // Standard grid item
+                    wrapperClass += "justify-self-center";
+                }
+
+                return (
+                    <div key={sig.id} className={wrapperClass}>
+                        <p className="mb-1">{sig.label}</p>
+                        {isLast && (
+                             <p className="mb-2">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
+                        )}
+                        <div className="h-20 flex items-center justify-center my-2">
+                            {sig.type === 'wet' ? <div className="h-full"></div> : <div className="border border-dashed border-gray-400 p-2 text-[10px] bg-gray-50 flex items-center justify-center w-20 h-20">QR Placeholder</div>}
+                        </div>
+                        <p className="font-bold underline mt-2">{sig.name}</p>
+                        <p>{sig.title}</p>
                     </div>
-                    <p className="font-bold underline mt-2">{sig.name}</p>
-                    <p>{sig.title}</p>
-                </div>
-             ))}
+                );
+             })}
            </div>
         </div>
       )}

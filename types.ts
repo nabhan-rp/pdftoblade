@@ -11,6 +11,7 @@ export interface Signature {
   title: string;
   type: 'wet' | 'qr';
   label?: string; // e.g., "Mengetahui," or "Hormat Kami,"
+  align?: 'left' | 'center' | 'right'; // Alignment preference
 }
 
 export interface HeaderLine {

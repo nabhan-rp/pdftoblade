@@ -165,7 +165,8 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
         name: 'Nama Penanda Tangan',
         title: 'Jabatan',
         type: 'wet',
-        label: settings.signatures.length === 0 ? 'Hormat Kami,' : 'Mengetahui,'
+        label: settings.signatures.length === 0 ? 'Hormat Kami,' : 'Mengetahui,',
+        align: 'right' // Default alignment
     };
     updateSetting('signatures', [...settings.signatures, newSig]);
   };
@@ -444,7 +445,27 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                 {settings.signatures.map((sig, index) => (
                         <div key={sig.id} className="border border-gray-200 rounded p-2 bg-gray-50 relative group mb-2">
                             <button onClick={() => removeSignature(sig.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">x</button>
-                            <p className="text-[10px] text-gray-400 mb-1 font-bold">Signature #{index + 1}</p>
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="text-[10px] text-gray-400 font-bold">Signature #{index + 1}</p>
+                                <div className="flex items-center gap-1 border border-gray-200 rounded px-1 bg-white">
+                                    <label className="text-[9px] text-gray-400 mr-1">Align:</label>
+                                    <button 
+                                        onClick={() => updateSignature(sig.id, 'align', 'left')} 
+                                        className={`p-1 hover:bg-gray-100 rounded ${sig.align === 'left' ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}
+                                        title="Left"
+                                    >L</button>
+                                    <button 
+                                        onClick={() => updateSignature(sig.id, 'align', 'center')} 
+                                        className={`p-1 hover:bg-gray-100 rounded ${sig.align === 'center' ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}
+                                        title="Center"
+                                    >C</button>
+                                    <button 
+                                        onClick={() => updateSignature(sig.id, 'align', 'right')} 
+                                        className={`p-1 hover:bg-gray-100 rounded ${sig.align === 'right' || !sig.align ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}
+                                        title="Right"
+                                    >R</button>
+                                </div>
+                            </div>
                             
                             <div className="mb-2">
                                 <label className="text-[9px] text-gray-400 block">Type</label>
