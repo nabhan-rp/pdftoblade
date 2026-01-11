@@ -18,6 +18,21 @@ const FONT_FAMILIES = [
   { label: 'Courier New', value: '"Courier New", monospace' },
 ];
 
+const LIST_STYLES = {
+    unordered: [
+        { label: '● Disc (Default)', value: 'disc' },
+        { label: '○ Circle', value: 'circle' },
+        { label: '■ Square', value: 'square' },
+    ],
+    ordered: [
+        { label: '1, 2, 3 (Default)', value: 'decimal' },
+        { label: 'a, b, c (Lower Alpha)', value: 'lower-alpha' },
+        { label: 'A, B, C (Upper Alpha)', value: 'upper-alpha' },
+        { label: 'i, ii, iii (Lower Roman)', value: 'lower-roman' },
+        { label: 'I, II, III (Upper Roman)', value: 'upper-roman' },
+    ]
+};
+
 const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
   content, 
   onChange, 
@@ -29,6 +44,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showVarMenu, setShowVarMenu] = useState(false);
+  const [showBulletMenu, setShowBulletMenu] = useState(false);
+  const [showNumberMenu, setShowNumberMenu] = useState(false);
   const [customFontSize, setCustomFontSize] = useState('12');
 
   useEffect(() => {
@@ -46,6 +63,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   }, [content]);
 
+  // Handle click outside to close menus
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
+             // Optional: logic to close text menus if needed, but primarily handled by onBlur/focus
+        }
+        // Close toolbar menus if clicking elsewhere
+        const target = event.target as HTMLElement;
+        if (!target.closest('.toolbar-menu-trigger')) {
+            setShowVarMenu(false);
+            setShowBulletMenu(false);
+            setShowNumberMenu(false);
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleInput = () => {
     if (editorRef.current) {
       const html = editorRef.current.innerHTML;
@@ -59,6 +95,37 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     handleInput();
+  };
+
+  const applyListStyle = (command: string, styleType: string) => {
+    // 1. Execute standard command to create list structure
+    document.execCommand(command, false, undefined);
+
+    // 2. Find the active list element and apply inline styles
+    // This is CRITICAL because Tailwind CSS resets list-style to 'none' and padding to 0.
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+        let node = selection.getRangeAt(0).commonAncestorContainer;
+        
+        // Traverse up to find the UL or OL
+        while (node && node.nodeName !== 'UL' && node.nodeName !== 'OL' && node !== editorRef.current) {
+            node = node.parentNode as Node;
+        }
+
+        if (node && (node.nodeName === 'UL' || node.nodeName === 'OL')) {
+            const listElement = node as HTMLElement;
+            // Apply style type (disc, decimal, etc)
+            listElement.style.listStyleType = styleType;
+            // Apply padding so bullets/numbers are visible inside the editor
+            listElement.style.paddingLeft = '24px';
+            listElement.style.marginLeft = '12px';
+        }
+    }
+
+    editorRef.current?.focus();
+    handleInput();
+    setShowBulletMenu(false);
+    setShowNumberMenu(false);
   };
 
   const insertTable = () => {
@@ -95,7 +162,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const insertHr = () => {
-      // Menggunakan style eksplisit agar garis terlihat jelas
       const hrHtml = '<hr style="border-top: 1px solid #000; margin: 15px 0; width: 100%;" /><p><br></p>';
       document.execCommand('insertHTML', false, hrHtml);
       handleInput();
@@ -118,7 +184,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
              range.setEnd(span, 1);
          }
       } catch (e) {
-          // Fallback if complex selection
           document.execCommand('fontSize', false, '3');
       }
       selection.removeAllRanges();
@@ -170,15 +235,57 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </div>
 
         {/* Lists & Indent */}
-        <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm">
-           <button onClick={() => execCmd('insertUnorderedList')} className="p-1.5 hover:bg-gray-200" title="Bullet List">•</button>
-           <button onClick={() => execCmd('insertOrderedList')} className="p-1.5 hover:bg-gray-200" title="Numbered List">1.</button>
+        <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm items-center">
+           {/* Bullet Dropdown */}
+           <div className="relative toolbar-menu-trigger">
+                <button onClick={() => { setShowBulletMenu(!showBulletMenu); setShowNumberMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5" title="Bullet List">
+                    <span>•</span> <span className="text-[10px] opacity-60">▼</span>
+                </button>
+                {showBulletMenu && (
+                    <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg z-20">
+                        {LIST_STYLES.unordered.map((style) => (
+                            <button 
+                                key={style.value}
+                                onClick={() => applyListStyle('insertUnorderedList', style.value)}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block"
+                            >
+                                {style.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+           </div>
+
+           {/* Number Dropdown */}
+           <div className="relative toolbar-menu-trigger">
+                <button onClick={() => { setShowNumberMenu(!showNumberMenu); setShowBulletMenu(false); }} className="p-1.5 hover:bg-gray-200 flex items-center gap-0.5" title="Numbered List">
+                    <span>1.</span> <span className="text-[10px] opacity-60">▼</span>
+                </button>
+                {showNumberMenu && (
+                    <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg z-20">
+                        {LIST_STYLES.ordered.map((style) => (
+                            <button 
+                                key={style.value}
+                                onClick={() => applyListStyle('insertOrderedList', style.value)}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 block"
+                            >
+                                {style.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+           </div>
+           
+           <div className="w-[1px] h-4 bg-gray-200 mx-0.5"></div>
+           
+           <button onClick={() => execCmd('outdent')} className="p-1.5 hover:bg-gray-200" title="Outdent">←|</button>
+           <button onClick={() => execCmd('indent')} className="p-1.5 hover:bg-gray-200" title="Indent">|→</button>
         </div>
 
         {/* Table & HR */}
         <div className="flex bg-white rounded border border-gray-300 mr-1 shadow-sm">
             <button onClick={insertTable} className="p-1.5 hover:bg-gray-200 text-xs font-bold px-2" title="Insert Table">Table</button>
-            <button onClick={insertHr} className="p-1.5 hover:bg-gray-200 text-xs px-2 font-mono" title="Horizontal Line (Garis Pembatas)">HR</button>
+            <button onClick={insertHr} className="p-1.5 hover:bg-gray-200 text-xs px-2 font-mono" title="Horizontal Line">HR</button>
         </div>
 
         <div className="w-full h-0 basis-full lg:hidden"></div> {/* Break row on small screens */}
@@ -216,7 +323,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </div>
 
         {/* Variables */}
-        <div className="relative ml-auto">
+        <div className="relative ml-auto toolbar-menu-trigger">
             <button 
                 onClick={() => setShowVarMenu(!showVarMenu)}
                 className="flex items-center gap-1 bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-indigo-700 shadow-sm"
