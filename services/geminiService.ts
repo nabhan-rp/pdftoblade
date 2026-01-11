@@ -12,22 +12,24 @@ export const analyzeDocumentImage = async (base64Data: string, mimeType: string 
   if (!apiKey) throw new Error("API Key missing");
 
   const prompt = `
-    Analyze this document (likely a formal letter). 
+    Analyze this document image(s) which is likely a formal letter. 
     I need you to extract the content and structure to create a Laravel Blade template.
     
-    1. Identify the Header/Kop Surat info (Institution name, address).
-    2. Extract the main body content as HTML. 
-       - CRITICAL: Detect dynamic parts (names, dates, numbers, recipients) and replace them with standard Blade syntax placeholders, e.g., {{ $nama_penerima }}, {{ $tanggal }}.
-       - Use inline styles for bolding, alignment, or underlining found in the document.
-    3. Identify signature area information.
-    4. List all the variables you created in the HTML so the user can control them.
+    1. Identify the Header/Kop Surat info.
+    2. Extract the MAIN BODY content as HTML. 
+       - CRITICAL: If there are TABLES, strictly use HTML <table>, <tr>, <td> tags with border styles.
+       - Detect dynamic parts (names, dates, numbers, recipients) and replace them with {{ $variable }}.
+    3. CHECK FOR ATTACHMENTS (Lampiran):
+       - If the document has a second page or a section labeled "Lampiran", extract that content separately into 'attachmentContent'.
+       - Maintain any tables found in the attachment exactly as HTML tables.
+    4. Identify signature area information.
 
     Return the result strictly as JSON.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Switched to Flash for speed (approx 5-10x faster)
+      model: "gemini-3-flash-preview", 
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -41,15 +43,16 @@ export const analyzeDocumentImage = async (base64Data: string, mimeType: string 
           properties: {
             institutionName: { type: Type.STRING },
             institutionAddress: { type: Type.STRING },
-            htmlContent: { type: Type.STRING, description: "The body content with {{ $variable }} syntax." },
+            htmlContent: { type: Type.STRING, description: "Main letter body HTML. Use <table> for tabular data." },
+            attachmentContent: { type: Type.STRING, description: "Content of attachments/lampiran if present. Use <table> for lists." },
             detectedVariables: {
               type: Type.ARRAY,
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  key: { type: Type.STRING, description: "The variable name used in HTML, e.g. nama_penerima" },
-                  label: { type: Type.STRING, description: "Human readable label" },
-                  defaultValue: { type: Type.STRING, description: "The value found in the image" }
+                  key: { type: Type.STRING },
+                  label: { type: Type.STRING },
+                  defaultValue: { type: Type.STRING }
                 }
               }
             },
@@ -70,17 +73,9 @@ export const analyzeDocumentImage = async (base64Data: string, mimeType: string 
   }
 };
 
-/**
- * Generates or modifies a logo based on a prompt and aspect ratio.
- * Uses Gemini 3 Pro Image Preview.
- */
 export const generateLogo = async (prompt: string, aspectRatio: string): Promise<string> => {
     if (!apiKey) throw new Error("API Key missing");
     
-    // Gemini 3 Pro Image supports specific aspect ratios
-    // Supported: "1:1", "3:4", "4:3", "9:16", "16:9"
-    // We map 21:9 or others to nearest supported or handle via cropping in CSS, 
-    // but the API call must be valid.
     let validRatio = "1:1";
     if (["1:1", "3:4", "4:3", "9:16", "16:9"].includes(aspectRatio)) {
         validRatio = aspectRatio;
@@ -94,7 +89,7 @@ export const generateLogo = async (prompt: string, aspectRatio: string): Promise
             },
             config: {
                 imageConfig: {
-                    aspectRatio: validRatio as any, // Cast because SDK types might trail behind model updates
+                    aspectRatio: validRatio as any,
                     imageSize: "1K"
                 }
             }
@@ -110,15 +105,4 @@ export const generateLogo = async (prompt: string, aspectRatio: string): Promise
         console.error("Gemini Image Gen Error:", error);
         throw error;
     }
-}
-
-/**
- * Quick text improvement or variable renaming using Flash Lite.
- */
-export const suggestImprovements = async (currentText: string, instruction: string): Promise<string> => {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite-preview-02-05',
-        contents: `Context: ${currentText}. Instruction: ${instruction}. Return only the updated text.`
-    });
-    return response.text || currentText;
 }

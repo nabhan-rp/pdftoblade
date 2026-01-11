@@ -5,18 +5,31 @@ export interface DocumentState {
   analysisError: string | null;
 }
 
+export interface Signature {
+  id: string;
+  name: string;
+  title: string;
+  type: 'wet' | 'qr';
+  label?: string; // e.g., "Mengetahui," or "Hormat Kami,"
+}
+
 export interface LetterSettings {
   // Page Setup
   marginTop: number;
   marginRight: number;
   marginBottom: number;
   marginLeft: number;
-  fontFamily: string;
+  
+  // Font Settings (Global & Section specific)
+  globalFontFamily: string;
+  headerFontFamily: string;
+  contentFontFamily: string;
+  attachmentFontFamily: string;
   fontSize: number;
 
   // Header (Kop Surat)
   showKop: boolean;
-  headerContent: string; // Changed from separate name/address to full HTML
+  headerContent: string;
   headerLineHeight: number;
   headerLineDouble: boolean;
   logoUrl: string;
@@ -25,14 +38,21 @@ export interface LetterSettings {
   // Content
   rawHtmlContent: string;
   
+  // Footer
+  showFooter: boolean;
+  footerContent: string;
+
+  // Attachments (Lampiran)
+  hasAttachment: boolean;
+  attachmentShowKop: boolean; // New: Repeat header on attachment page
+  attachmentContent: string;
+
   // Variables (Dynamic Fields)
   variables: Variable[];
 
-  // Signature
+  // Signatures
   showSignature: boolean;
-  signatureType: 'wet' | 'qr';
-  signatureName: string;
-  signatureTitle: string;
+  signatures: Signature[];
 }
 
 export interface Variable {
@@ -43,9 +63,10 @@ export interface Variable {
 }
 
 export interface AnalysisResponse {
-  institutionName: string; // Kept for legacy mapping from AI
-  institutionAddress: string; // Kept for legacy mapping from AI
+  institutionName: string;
+  institutionAddress: string;
   htmlContent: string;
+  attachmentContent?: string; // Separated attachment content
   detectedVariables: { key: string; label: string; defaultValue: string }[];
   signatureName?: string;
   signatureTitle?: string;

@@ -5,14 +5,19 @@ import EditorPanel from './components/EditorPanel';
 import TemplatePreview from './components/TemplatePreview';
 
 const DEFAULT_SETTINGS: LetterSettings = {
-  marginTop: 4, // 4cm standard official letter top
+  marginTop: 4, 
   marginRight: 3,
   marginBottom: 3,
-  marginLeft: 4, // 4cm standard official letter left
-  fontFamily: '"Times New Roman", serif',
+  marginLeft: 4, 
+  
+  // Font Defaults
+  globalFontFamily: '"Times New Roman", serif',
+  headerFontFamily: '"Times New Roman", serif',
+  contentFontFamily: '"Times New Roman", serif',
+  attachmentFontFamily: '"Times New Roman", serif',
   fontSize: 12,
+
   showKop: true,
-  // HTML Structure for default header to allow rich text editing
   headerContent: `
     <div style="text-align: center;">
       <p style="margin: 0;"><span style="font-size: 16pt;"><strong>UNIVERSITAS ISLAM NEGERI</strong></span></p>
@@ -23,17 +28,43 @@ const DEFAULT_SETTINGS: LetterSettings = {
   `,
   headerLineHeight: 3,
   headerLineDouble: true,
-  logoUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_UIN_Sunan_Gunung_Djati_Bandung.png", // Placeholder
+  logoUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_UIN_Sunan_Gunung_Djati_Bandung.png", 
   logoAspectRatio: "1:1",
+  
   rawHtmlContent: "<p>Kepada Yth.<br><strong>{{ $nama_penerima }}</strong><br>di Tempat</p><p>Assalamu'alaikum Wr. Wb.</p><p>Dengan hormat, sehubungan dengan...</p>",
+  
+  hasAttachment: false,
+  attachmentShowKop: false,
+  attachmentContent: `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid black; padding: 5px;">No</th>
+                <th style="border: 1px solid black; padding: 5px;">Nama</th>
+                <th style="border: 1px solid black; padding: 5px;">Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; padding: 5px;">1</td>
+                <td style="border: 1px solid black; padding: 5px;">Data 1</td>
+                <td style="border: 1px solid black; padding: 5px;">-</td>
+            </tr>
+        </tbody>
+    </table>
+  `,
+
+  showFooter: false,
+  footerContent: "<p>Dokumen ini dibuat secara otomatis.</p>",
+
   variables: [
     { id: 'v1', key: 'nama_penerima', label: 'Nama Penerima', defaultValue: 'Bapak/Ibu Dosen' },
     { id: 'v2', key: 'tanggal', label: 'Tanggal Surat', defaultValue: '12 Januari 2026' }
   ],
   showSignature: true,
-  signatureType: 'wet',
-  signatureName: "Prof. Dr. H. Rosihon Anwar, M.Ag",
-  signatureTitle: "Rektor"
+  signatures: [
+    { id: 's1', name: 'Prof. Dr. H. Rosihon Anwar, M.Ag', title: 'Rektor', type: 'wet', label: 'Mengetahui,' }
+  ]
 };
 
 const App: React.FC = () => {
@@ -53,13 +84,20 @@ const App: React.FC = () => {
     setView(TabView.EDITOR);
   };
 
+  const handleBackToUpload = () => {
+    if (confirm("Are you sure you want to go back? Unsaved changes will be lost.")) {
+      setView(TabView.UPLOAD);
+      setDocState(prev => ({ ...prev, originalImage: null, analysisError: null }));
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (file.name.endsWith('.docx') || file.name.endsWith('.doc') || 
         file.type.includes('wordprocessingml') || file.type.includes('msword')) {
-        alert("For Word (.docx) or Google Docs, please 'File > Save as PDF' first. The AI needs the PDF layout to accurately detect margins, logos, and headers.");
+        alert("Microsoft Word (.docx) is NOT supported directly. Please Save As PDF first, then upload the PDF.");
         return;
     }
 
@@ -67,26 +105,19 @@ const App: React.FC = () => {
     const isPdf = file.type === 'application/pdf';
 
     if (!isImage && !isPdf) {
-        alert("Unsupported file type. Please upload a PDF or an Image (JPG/PNG).");
+        alert("Unsupported file type. Please upload PDF, JPG, or PNG.");
         return;
     }
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64Result = e.target?.result as string;
-      
-      setDocState(prev => ({ 
-        ...prev, 
-        originalImage: isImage ? base64Result : null,
-        isAnalyzing: true, 
-        analysisError: null 
-      }));
+      setDocState(prev => ({ ...prev, originalImage: isImage ? base64Result : null, isAnalyzing: true, analysisError: null }));
       
       try {
         const base64Data = base64Result.split(',')[1];
         const analysis = await analyzeDocumentImage(base64Data, file.type);
         
-        // Construct header HTML from analysis result if it was split
         let detectedHeader = '';
         if (analysis.institutionName || analysis.institutionAddress) {
             detectedHeader = `
@@ -101,15 +132,21 @@ const App: React.FC = () => {
           ...prev,
           headerContent: detectedHeader || prev.headerContent,
           rawHtmlContent: analysis.htmlContent,
+          hasAttachment: !!analysis.attachmentContent,
+          attachmentContent: analysis.attachmentContent || prev.attachmentContent,
           variables: analysis.detectedVariables.map((v, i) => ({ ...v, id: `var-${i}` })),
-          signatureName: analysis.signatureName || prev.signatureName,
-          signatureTitle: analysis.signatureTitle || prev.signatureTitle
+          signatures: analysis.signatureName ? [{
+             id: 'sig-ai',
+             name: analysis.signatureName,
+             title: analysis.signatureTitle || 'Pejabat',
+             type: 'wet',
+             label: 'Hormat Kami,'
+          }] : prev.signatures
         }));
         
         setView(TabView.EDITOR);
       } catch (err) {
-        console.error(err);
-        setDocState(prev => ({ ...prev, analysisError: "Failed to analyze document. If you don't have an API key, try 'Create Manually'." }));
+        setDocState(prev => ({ ...prev, analysisError: "AI Analysis failed. Please try 'Manual Creation' or a different file." }));
       } finally {
         setDocState(prev => ({ ...prev, isAnalyzing: false }));
       }
@@ -118,8 +155,16 @@ const App: React.FC = () => {
   };
 
   const handleDownloadBlade = () => {
-    // Construct the full blade file
-    // Note: We use the inline CSS generated by the WYSIWYG editor for maximum compatibility
+    const signaturesHtml = settings.signatures.map((sig, idx) => `
+        <div class="sig-block">
+            <p>${sig.label}</p>
+            ${idx === settings.signatures.length - 1 ? `<p>Bandung, {{ $tanggal }}</p>` : ''}
+            ${sig.type === 'wet' ? '<div style="height: 80px;"></div>' : `<div style="height: 80px; text-align:center;"><img src="{{ $qr_code_${idx} ?? '' }}" alt="QR" style="height:70px; width:70px;"></div>`}
+            <p style="font-weight: bold; text-decoration: underline;">${sig.name}</p>
+            <p>${sig.title}</p>
+        </div>
+    `).join('');
+
     const bladeContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -130,89 +175,76 @@ const App: React.FC = () => {
             margin: ${settings.marginTop}cm ${settings.marginRight}cm ${settings.marginBottom}cm ${settings.marginLeft}cm;
         }
         body {
-            font-family: ${settings.fontFamily.replace(/"/g, "'")};
+            font-family: ${settings.globalFontFamily.replace(/"/g, "'")};
             font-size: ${settings.fontSize}pt;
             line-height: 1.5;
             color: #000;
         }
-        .header-container {
-            display: table;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .header-logo {
-            display: table-cell;
-            vertical-align: middle;
-            width: 80px;
-            padding-right: 15px;
-        }
-        .header-logo img {
-            width: 100%;
-            height: auto;
-        }
-        .header-content {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-        }
-        /* WYSIWYG reset for header P tags */
-        .header-content p {
-            margin: 0;
-            padding: 0;
-        }
-        .header-line {
-            border-bottom: ${settings.headerLineHeight}px ${settings.headerLineDouble ? 'double' : 'solid'} black;
-            margin-top: 8px;
-            width: 100%;
-            clear: both;
-        }
-        .signature {
-            margin-top: 50px;
-            float: right;
-            text-align: center;
-            width: 250px;
-        }
-        .signature-img {
-            width: 80px;
-            height: 80px;
-            margin: 10px auto;
-        }
-        .clear { clear: both; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        th, td { border: 1px solid black; padding: 4px; text-align: left; }
         
-        /* Helper for shared hosting PDF engines that might need table layout for side-by-side header */
+        .header-container { display: table; width: 100%; margin-bottom: 20px; font-family: ${settings.headerFontFamily.replace(/"/g, "'")}; }
+        .header-logo { display: table-cell; vertical-align: middle; width: 80px; padding-right: 15px; }
+        .header-logo img { width: 100%; height: auto; }
+        .header-content { display: table-cell; vertical-align: middle; text-align: center; }
+        .header-line { border-bottom: ${settings.headerLineHeight}px ${settings.headerLineDouble ? 'double' : 'solid'} black; margin-top: 8px; width: 100%; clear: both; }
+
+        .content { font-family: ${settings.contentFontFamily.replace(/"/g, "'")}; }
+        .signature-container { margin-top: 50px; width: 100%; display: table; }
+        .sig-block { display: table-cell; vertical-align: top; text-align: center; padding: 0 10px; width: ${100 / Math.max(1, settings.signatures.length)}%; }
+        
+        .footer { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 30px; 
+            text-align: center; 
+            font-size: 0.8em; 
+            color: #666;
+            border-top: 1px solid #eee; 
+        }
+
+        .page-break { page-break-before: always; clear: both; }
+        .attachment-section { font-family: ${settings.attachmentFontFamily.replace(/"/g, "'")}; }
     </style>
 </head>
 <body>
+    @if(${settings.showFooter ? 'true' : 'false'})
+    <div class="footer">
+        ${settings.footerContent}
+    </div>
+    @endif
+
     @if(${settings.showKop ? 'true' : 'false'})
     <div class="header-container">
-        <div class="header-logo">
-             <img src="${settings.logoUrl}" alt="Logo">
-        </div>
-        <div class="header-content">
-             ${settings.headerContent}
-        </div>
+        <div class="header-logo"><img src="${settings.logoUrl}" alt="Logo"></div>
+        <div class="header-content">${settings.headerContent}</div>
     </div>
     <div class="header-line"></div>
     @endif
 
-    <div class="content">
-        ${settings.rawHtmlContent}
-    </div>
+    <div class="content">${settings.rawHtmlContent}</div>
 
     @if(${settings.showSignature ? 'true' : 'false'})
-    <div class="signature">
-        <p>Bandung, {{ $tanggal }}</p>
-        
-        @if(${settings.signatureType === 'wet' ? 'true' : 'false'})
-           <br><br><br>
-        @else
-           <!-- QR Code E-Sign Placeholder -->
-           <!-- Inject the QR URL in your controller: $qr_code -->
-           <img src="{{ $qr_code ?? '' }}" alt="QR Signature" class="signature-img">
-        @endif
-        
-        <p style="font-weight: bold; text-decoration: underline;">${settings.signatureName}</p>
-        <p>${settings.signatureTitle}</p>
+    <div class="signature-container">${signaturesHtml}</div>
+    @endif
+
+    @if(${settings.hasAttachment ? 'true' : 'false'})
+    <div class="page-break"></div>
+    
+    @if(${settings.attachmentShowKop ? 'true' : 'false'})
+    <div class="header-container">
+        <div class="header-logo"><img src="${settings.logoUrl}" alt="Logo"></div>
+        <div class="header-content">${settings.headerContent}</div>
+    </div>
+    <div class="header-line"></div>
+    <br>
+    @endif
+
+    <div class="attachment-section">
+        <h3>Lampiran</h3>
+        ${settings.attachmentContent}
     </div>
     @endif
 </body>
@@ -230,8 +262,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen bg-gray-100 overflow-hidden font-sans">
-      
-      {/* View Switcher Mobile/Tablet */}
       {view !== TabView.UPLOAD && (
          <div className="lg:hidden absolute top-4 left-4 z-50 flex bg-white rounded-lg shadow-md p-1">
              <button onClick={() => setView(TabView.EDITOR)} className={`px-3 py-1 text-sm rounded ${view === TabView.EDITOR ? 'bg-indigo-100 text-indigo-700' : ''}`}>Edit</button>
@@ -239,30 +269,23 @@ const App: React.FC = () => {
          </div>
       )}
 
-      {/* Editor Panel (Sidebar) */}
       {(view === TabView.UPLOAD || view === TabView.EDITOR) && (
-          <div className={`w-full lg:w-[400px] flex-shrink-0 h-full transition-all duration-300 ${view === TabView.UPLOAD ? 'lg:w-full items-center justify-center' : ''} ${view === TabView.PREVIEW ? 'hidden lg:block' : ''}`}>
-             
+          <div className={`w-full lg:w-[420px] flex-shrink-0 h-full transition-all duration-300 ${view === TabView.UPLOAD ? 'lg:w-full items-center justify-center' : ''} ${view === TabView.PREVIEW ? 'hidden lg:block' : ''}`}>
              {view === TabView.UPLOAD ? (
                  <div className="max-w-xl w-full p-8 bg-white rounded-2xl shadow-xl text-center mx-4">
-                    <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
-                    </div>
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">BladeRunner</h1>
-                    <p className="text-gray-500 mb-8">Upload a PDF or Image of your document. Gemini AI will convert it into a dynamic Laravel Blade template.</p>
+                    <p className="text-gray-500 mb-8">AI-Powered Laravel Blade Template Generator</p>
                     
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 mb-6 text-left">
+                        <strong>Supported Formats:</strong> PDF, JPG, PNG.<br/>
+                        <strong>Note:</strong> Microsoft Word (.docx) and Google Docs are <u>not supported directly</u>. Please use "Save as PDF" first, then upload the PDF here.
+                    </div>
+
                     <div className="flex flex-col gap-4">
                         <div className="relative group w-full">
-                            <input 
-                                type="file" 
-                                accept="image/*,.pdf,.docx,.doc" 
-                                ref={fileInputRef}
-                                onChange={handleFileUpload}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                disabled={docState.isAnalyzing}
-                            />
-                            <button className={`w-full py-4 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 font-medium group-hover:bg-indigo-100 transition-colors ${docState.isAnalyzing ? 'animate-pulse cursor-wait' : ''}`}>
-                                {docState.isAnalyzing ? 'Analyzing Document with Gemini...' : 'Click to Upload PDF or Image'}
+                            <input type="file" accept="image/*,.pdf" ref={fileInputRef} onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={docState.isAnalyzing} />
+                            <button className={`w-full py-4 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 font-medium ${docState.isAnalyzing ? 'animate-pulse' : ''}`}>
+                                {docState.isAnalyzing ? 'Analyzing Document with AI...' : 'Click to Upload PDF or Image'}
                             </button>
                         </div>
                         
@@ -272,23 +295,12 @@ const App: React.FC = () => {
                             <div className="flex-grow border-t border-gray-200"></div>
                         </div>
 
-                        <button 
-                            onClick={handleManualCreate}
-                            className="w-full py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                        >
-                            Create from Scratch (Manual)
-                        </button>
-                    </div>
-
-                    {docState.analysisError && (
-                        <p className="text-red-500 mt-4 text-sm">{docState.analysisError}</p>
-                    )}
-                    <div className="mt-6 text-xs text-gray-400">
-                        <p className="font-semibold mb-1">Supported:</p>
-                        <ul className="list-disc pl-4 space-y-1">
-                            <li><span className="font-medium text-gray-600">PDF</span> (Recommended for best layout)</li>
-                            <li><span className="font-medium text-gray-600">JPG/PNG</span> (Screenshots/Scans)</li>
-                        </ul>
+                        <div className="text-left">
+                            <button onClick={handleManualCreate} className="w-full py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 shadow-sm">
+                                Manual Creation
+                            </button>
+                            <p className="text-xs text-gray-400 mt-1 text-center">Start from scratch with a blank canvas. No AI analysis.</p>
+                        </div>
                     </div>
                  </div>
              ) : (
@@ -296,12 +308,12 @@ const App: React.FC = () => {
                     settings={settings} 
                     setSettings={setSettings} 
                     onDownload={handleDownloadBlade} 
+                    onBack={handleBackToUpload}
                  />
              )}
           </div>
       )}
 
-      {/* Preview Area */}
       {view !== TabView.UPLOAD && (
         <div className={`flex-1 bg-gray-200 overflow-auto flex items-start justify-center p-8 lg:p-12 ${view === TabView.EDITOR ? 'hidden lg:flex' : ''}`}>
            <TemplatePreview settings={settings} />
