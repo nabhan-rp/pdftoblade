@@ -69,6 +69,7 @@ export interface LetterSettings {
 
   // Signatures
   showSignature: boolean;
+  signatureCity: string;
   signatures: Signature[];
 }
 

@@ -71,6 +71,7 @@ const DEFAULT_SETTINGS: LetterSettings = {
     { id: 'v2', key: 'tanggal', label: 'Tanggal Surat', defaultValue: '12 Januari 2026' }
   ],
   showSignature: true,
+  signatureCity: "Bandung",
   signatures: [
     { id: 's1', name: 'Prof. Dr. H. Rosihon Anwar, M.Ag', title: 'Rektor', type: 'wet', label: 'Mengetahui,', align: 'right' }
   ]
@@ -197,7 +198,7 @@ const App: React.FC = () => {
         return `
         <div class="sig-block" style="${blockStyle}">
             <p>${sig.label}</p>
-            ${isLast ? `<p>Bandung, {{ $tanggal }}</p>` : ''}
+            ${isLast ? `<p>${settings.signatureCity}, {{ $tanggal }}</p>` : ''}
             ${sig.type === 'wet' ? '<div style="height: 80px;"></div>' : `<div style="height: 80px; text-align:center;"><img src="{{ $qr_code_${idx} ?? '' }}" alt="QR" style="height:70px; width:70px; display:inline-block;"></div>`}
             <p style="font-weight: bold; text-decoration: underline;">${sig.name}</p>
             <p>${sig.title}</p>

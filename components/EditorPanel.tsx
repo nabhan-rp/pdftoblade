@@ -442,6 +442,21 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ settings, setSettings, onDown
                     <label className="block text-xs font-semibold text-gray-500 uppercase">Signatures</label>
                     <button onClick={addSignature} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200">+ Add</button>
                 </div>
+
+                {/* NEW INPUT for City */}
+                {settings.signatures.length > 0 && (
+                     <div className="mb-3">
+                        <label className="text-[10px] text-gray-400 block uppercase">City / Location</label>
+                        <input 
+                            type="text" 
+                            value={settings.signatureCity} 
+                            onChange={(e) => updateSetting('signatureCity', e.target.value)}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                            placeholder="e.g. Bandung"
+                        />
+                     </div>
+                )}
+
                 {settings.signatures.map((sig, index) => (
                         <div key={sig.id} className="border border-gray-200 rounded p-2 bg-gray-50 relative group mb-2">
                             <button onClick={() => removeSignature(sig.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">x</button>

@@ -108,7 +108,7 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
                     <div key={sig.id} className={wrapperClass}>
                         <p className="mb-1">{sig.label}</p>
                         {isLast && (
-                             <p className="mb-2">Bandung, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
+                             <p className="mb-2">{settings.signatureCity}, <span className="bg-yellow-100 px-1">{`{{ $tanggal }}`}</span></p>
                         )}
                         <div className="h-20 flex items-center justify-center my-2">
                             {sig.type === 'wet' ? <div className="h-full"></div> : <div className="border border-dashed border-gray-400 p-2 text-[10px] bg-gray-50 flex items-center justify-center w-20 h-20">QR Placeholder</div>}
