@@ -29,8 +29,25 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
     paddingLeft: `${settings.marginLeft}cm`,
   };
 
+  const HeaderLines = () => (
+    <div className="w-full clear-both">
+        {settings.headerLines.map((line) => (
+            <div 
+                key={line.id} 
+                style={{ 
+                    borderBottomWidth: `${line.width}px`, 
+                    borderBottomStyle: line.style, 
+                    borderColor: line.color,
+                    marginTop: `${line.marginTop}px`,
+                    marginBottom: `${line.marginBottom}px`
+                }} 
+            />
+        ))}
+    </div>
+  );
+
   const HeaderComponent = () => (
-    <div className="mb-6">
+    <div className="mb-2">
         <div className="flex items-center gap-4 mb-2" style={{ fontFamily: settings.headerFontFamily }}>
         {settings.logoUrl && (
             <div className="flex-shrink-0" style={{ width: '80px' }}>
@@ -39,8 +56,7 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
         )}
         <div className="flex-grow text-center leading-tight text-black" dangerouslySetInnerHTML={{ __html: processedHeader }} />
         </div>
-        <div style={{ borderBottomWidth: `${settings.headerLineHeight}px`, borderBottomStyle: settings.headerLineDouble ? 'double' : 'solid', borderColor: 'black' }} className="w-full mb-1"></div>
-        {settings.headerLineDouble && <div className="w-full border-b border-black h-0.5"></div>}
+        <HeaderLines />
     </div>
   );
 
@@ -105,7 +121,6 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({ settings, scale = 1 }
         >
             <div className="absolute -top-6 left-0 text-gray-500 text-xs italic font-bold">-- Page Break --</div>
             
-            {/* Conditional Attachment Header */}
             {settings.attachmentShowKop && <HeaderComponent />}
             
             <h3 className="font-bold text-lg mb-4 underline">Lampiran</h3>

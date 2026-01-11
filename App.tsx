@@ -26,8 +26,11 @@ const DEFAULT_SETTINGS: LetterSettings = {
       <p style="margin: 0; font-size: 10pt;">Telp. (022) 7800525 Fax. (022) 7803936 Website: www.uinsgd.ac.id</p>
     </div>
   `,
-  headerLineHeight: 3,
-  headerLineDouble: true,
+  // Initial Header Lines: Standard Double Line effect
+  headerLines: [
+      { id: 'l1', width: 3, style: 'solid', color: '#000000', marginTop: 8, marginBottom: 2 },
+      { id: 'l2', width: 1, style: 'solid', color: '#000000', marginTop: 0, marginBottom: 0 },
+  ],
   logoUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_UIN_Sunan_Gunung_Djati_Bandung.png", 
   logoAspectRatio: "1:1",
   
@@ -165,6 +168,17 @@ const App: React.FC = () => {
         </div>
     `).join('');
 
+    // Generate Dynamic Header Lines HTML
+    const headerLinesHtml = settings.headerLines.map(line => `
+        <div style="
+            border-bottom: ${line.width}px ${line.style} ${line.color}; 
+            margin-top: ${line.marginTop}px; 
+            margin-bottom: ${line.marginBottom}px;
+            width: 100%;
+            clear: both;
+        "></div>
+    `).join('');
+
     const bladeContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -183,11 +197,13 @@ const App: React.FC = () => {
         table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
         th, td { border: 1px solid black; padding: 4px; text-align: left; }
         
-        .header-container { display: table; width: 100%; margin-bottom: 20px; font-family: ${settings.headerFontFamily.replace(/"/g, "'")}; }
+        .header-container { display: table; width: 100%; margin-bottom: 5px; font-family: ${settings.headerFontFamily.replace(/"/g, "'")}; }
         .header-logo { display: table-cell; vertical-align: middle; width: 80px; padding-right: 15px; }
         .header-logo img { width: 100%; height: auto; }
         .header-content { display: table-cell; vertical-align: middle; text-align: center; }
-        .header-line { border-bottom: ${settings.headerLineHeight}px ${settings.headerLineDouble ? 'double' : 'solid'} black; margin-top: 8px; width: 100%; clear: both; }
+        
+        /* Dynamic Header Lines Container */
+        .header-lines { margin-bottom: 15px; }
 
         .content { font-family: ${settings.contentFontFamily.replace(/"/g, "'")}; }
         .signature-container { margin-top: 50px; width: 100%; display: table; }
@@ -221,7 +237,9 @@ const App: React.FC = () => {
         <div class="header-logo"><img src="${settings.logoUrl}" alt="Logo"></div>
         <div class="header-content">${settings.headerContent}</div>
     </div>
-    <div class="header-line"></div>
+    <div class="header-lines">
+        ${headerLinesHtml}
+    </div>
     @endif
 
     <div class="content">${settings.rawHtmlContent}</div>
@@ -238,7 +256,9 @@ const App: React.FC = () => {
         <div class="header-logo"><img src="${settings.logoUrl}" alt="Logo"></div>
         <div class="header-content">${settings.headerContent}</div>
     </div>
-    <div class="header-line"></div>
+    <div class="header-lines">
+        ${headerLinesHtml}
+    </div>
     <br>
     @endif
 

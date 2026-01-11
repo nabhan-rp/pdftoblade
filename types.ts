@@ -13,6 +13,15 @@ export interface Signature {
   label?: string; // e.g., "Mengetahui," or "Hormat Kami,"
 }
 
+export interface HeaderLine {
+  id: string;
+  width: number; // in px
+  style: 'solid' | 'double' | 'dashed' | 'dotted';
+  color: string;
+  marginTop: number;
+  marginBottom: number;
+}
+
 export interface LetterSettings {
   // Page Setup
   marginTop: number;
@@ -30,8 +39,7 @@ export interface LetterSettings {
   // Header (Kop Surat)
   showKop: boolean;
   headerContent: string;
-  headerLineHeight: number;
-  headerLineDouble: boolean;
+  headerLines: HeaderLine[]; // NEW: Dynamic lines
   logoUrl: string;
   logoAspectRatio: string;
 
@@ -44,7 +52,7 @@ export interface LetterSettings {
 
   // Attachments (Lampiran)
   hasAttachment: boolean;
-  attachmentShowKop: boolean; // New: Repeat header on attachment page
+  attachmentShowKop: boolean;
   attachmentContent: string;
 
   // Variables (Dynamic Fields)
@@ -66,7 +74,7 @@ export interface AnalysisResponse {
   institutionName: string;
   institutionAddress: string;
   htmlContent: string;
-  attachmentContent?: string; // Separated attachment content
+  attachmentContent?: string;
   detectedVariables: { key: string; label: string; defaultValue: string }[];
   signatureName?: string;
   signatureTitle?: string;

@@ -39,28 +39,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const [showVarMenu, setShowVarMenu] = useState(false);
 
-  // CRITICAL FIX FOR CURSOR BUG:
-  // We do NOT use dangerouslySetInnerHTML in the render return.
-  // We only sync the content IF it's different from the DOM and we aren't focused 
-  // (or if it's an external update like variable insertion).
   useEffect(() => {
     if (editorRef.current) {
         const currentHtml = editorRef.current.innerHTML;
-        // Only update DOM if content prop is significantly different
-        // This prevents React from resetting the cursor position on every keystroke
         if (content !== currentHtml) {
-             // If the element is focused, we have to be careful. 
-             // Usually we only update from props if NOT focused, unless it's a forced external change.
-             // However, for variable insertion, we need to update.
-             // The check below ensures we don't overwrite typing.
              if (document.activeElement !== editorRef.current) {
                 editorRef.current.innerHTML = content;
              } else {
-                 // Even if focused, if the difference is huge (e.g. variable inserted via button), 
-                 // we might want to update, but usually variable insertion is handled by execCommand which updates DOM first, then state.
-                 // So we can mostly skip updating innerHTML while focused to avoid cursor jumping.
-                 
-                 // Edge case: If content is empty string, clear it
                  if (content === '' && currentHtml !== '') {
                      editorRef.current.innerHTML = '';
                  }
@@ -69,7 +54,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   }, [content]);
 
-  // Handle Input specifically to sync back to parent
   const handleInput = () => {
     if (editorRef.current) {
       const html = editorRef.current.innerHTML;
@@ -120,7 +104,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
       span.style.fontSize = size;
-      
       try {
          if (!range.collapsed) {
              range.surroundContents(span);
@@ -206,6 +189,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {FONT_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
 
+        {/* Color Picker */}
+        <div className="flex items-center mr-1" title="Text Color">
+            <label className="cursor-pointer border border-gray-300 rounded p-1 hover:bg-gray-200 flex items-center justify-center h-8 w-8 bg-white">
+                <span className="text-xs font-bold text-gray-600">A</span>
+                <input 
+                    type="color" 
+                    onChange={(e) => execCmd('foreColor', e.target.value)}
+                    className="absolute w-0 h-0 opacity-0" 
+                />
+            </label>
+        </div>
+
         {/* Variables */}
         <div className="relative ml-auto">
             <button 
@@ -241,7 +236,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             textAlign: 'left', 
             width: '100%' 
         }}
-        // Removed dangerouslySetInnerHTML to prevent React re-render conflicts
       />
     </div>
   );
